@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>聯盟龜山動物醫院 助理月度評鑑系統</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+  :root {
+    color-scheme: light;
+    --bg:#f7f8fa; --card:#ffffff; --border:#e4e7ec; --text:#1f2733; --muted:#6b7688;
+    --primary:#0d9488; --primary-dark:#0f766e; --primary-light:#ccfbf1;
+    --red:#dc2626; --amber:#d97706; --green:#16a34a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,"PingFang TC","Microsoft JhengHei",sans-serif;
+    background:var(--bg); color:var(--text); font-size:14px;
+  }
+  .wrap { max-width:920px; margin:0 auto; padding:20px 16px 60px; }
+  header.top { text-align:center; margin-bottom:18px; }
+  header.top h1 { font-size:20px; margin:0 0 4px; color:var(--primary-dark); }
+  header.top p { margin:0; color:var(--muted); font-size:12px; }
+  nav.tabs { display:flex; gap:8px; margin-bottom:18px; background:var(--card); padding:6px; border-radius:12px; border:1px solid var(--border); }
+  nav.tabs button {
+    flex:1; padding:10px 8px; border:none; background:transparent; border-radius:9px; cursor:pointer;
+    font-size:14px; font-weight:600; color:var(--muted);
+  }
+  nav.tabs button.active { background:var(--primary); color:#fff; }
+  .panel { display:none; }
+  .panel.active { display:block; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; margin-bottom:16px; }
+  .card h2 { font-size:15px; margin:0 0 2px; }
+  .card .sub { color:var(--muted); font-size:12px; margin:0 0 12px; }
+  .legend { display:flex; flex-wrap:wrap; gap:6px 14px; font-size:11.5px; color:var(--muted); }
+  .row-flex { display:flex; gap:10px; flex-wrap:wrap; }
+  .picker-btn {
+    padding:9px 14px; border:1.5px solid var(--border); background:#fff; border-radius:10px; cursor:pointer;
+    font-size:13.5px; font-weight:600; color:var(--text);
+  }
+  .picker-btn.selected { border-color:var(--primary); background:var(--primary); color:#fff; }
+  input[type="month"] {
+    padding:9px 12px; border:1.5px solid var(--border); border-radius:10px; font-size:13.5px; color:var(--text); background:#fff;
+  }
+  .field-label { font-size:12.5px; font-weight:700; color:var(--muted); margin-bottom:8px; display:block; letter-spacing:.02em; }
+  .progress-wrap { margin:14px 0 4px; }
+  .progress-track { height:8px; background:#eef1f4; border-radius:6px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .25s ease; }
+  .progress-text { font-size:11.5px; color:var(--muted); margin-top:5px; }
+  .section-card { border-left:4px solid var(--primary); }
+  .item { padding:12px 0; border-bottom:1px solid #f0f2f5; }
+  .item:last-child { border-bottom:none; }
+  .item-label { font-weight:600; font-size:13.5px; margin-bottom:2px; }
+  .item-desc { color:var(--muted); font-size:12px; margin-bottom:8px; }
+  .score-row { display:flex; gap:8px; }
+  .score-btn {
+    width:38px; height:38px; border-radius:10px; border:1.5px solid var(--border); background:#fff; cursor:pointer;
+    font-size:14px; font-weight:700; color:var(--text);
+  }
+  .score-btn.selected { background:var(--primary); border-color:var(--primary); color:#fff; }
+  textarea {
+    width:100%; min-height:90px; border:1.5px solid var(--border); border-radius:10px; padding:10px 12px;
+    font-size:13.5px; font-family:inherit; resize:vertical; color:var(--text);
+  }
+  .btn-primary {
+    width:100%; padding:13px; background:var(--primary); color:#fff; border:none; border-radius:12px;
+    font-size:15px; font-weight:700; cursor:pointer; margin-top:14px;
+  }
+  .btn-primary:disabled { background:#c8ccd2; cursor:not-allowed; }
+  .btn-secondary {
+    padding:10px 16px; background:#fff; color:var(--primary-dark); border:1.5px solid var(--primary); border-radius:10px;
+    font-size:13.5px; font-weight:700; cursor:pointer;
+  }
+  .result-card { border:1.5px solid var(--primary); background:var(--primary-light); }
+  .avg-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin:12px 0; }
+  .avg-box { background:#fff; border-radius:10px; padding:10px 6px; text-align:center; border:1px solid var(--border); }
+  .avg-box .n { font-size:18px; font-weight:800; color:var(--primary-dark); }
+  .avg-box .l { font-size:11px; color:var(--muted); margin-top:2px; }
+  .summary-text { line-height:1.75; font-size:13.5px; background:#fff; border-radius:10px; padding:14px; border:1px solid var(--border); white-space:pre-wrap; }
+  select {
+    padding:9px 12px; border:1.5px solid var(--border); border-radius:10px; font-size:13.5px; background:#fff; color:var(--text);
+  }
+  .empty-state { text-align:center; color:var(--muted); padding:30px 10px; font-size:13px; }
+  .month-card { border-left:4px solid var(--primary); margin-bottom:10px; }
+  .month-card .mh { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .month-card .mh .m { font-weight:800; font-size:14px; }
+  .month-card .mh .avg { font-weight:800; color:var(--primary-dark); }
+  .month-card .lbl { font-size:11.5px; font-weight:700; color:var(--muted); margin-top:8px; }
+  .chart-box { position:relative; height:220px; margin-top:4px; }
+  table.ov { width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.ov th, table.ov td { padding:9px 6px; border-bottom:1px solid var(--border); text-align:center; }
+  table.ov th { color:var(--muted); font-weight:700; font-size:11.5px; }
+  table.ov td.name { text-align:left; font-weight:700; }
+  .pill { padding:3px 9px; border-radius:20px; font-weight:700; font-size:12px; display:inline-block; }
+  .pill.g { background:#dcfce7; color:var(--green); }
+  .pill.a { background:#fef3c7; color:var(--amber); }
+  .pill.r { background:#fee2e2; color:var(--red); }
+  .toast { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:#1f2733; color:#fff; padding:10px 18px; border-radius:10px; font-size:13px; z-index:50; }
+  .spin { display:inline-block; width:14px; height:14px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:sp .7s linear infinite; margin-right:6px; vertical-align:-2px; }
+  @keyframes sp { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>🐾 聯盟龜山動物醫院 助理月度評鑑系統</h1>
+    <p>醫師填寫評分 · 自動產生評論摘要 · 助理可查詢個人歷史紀錄</p>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="doctor" class="active">醫師填寫</button>
+    <button data-tab="staff">助理查詢</button>
+    <button data-tab="overview">管理員</button>
+  </nav>
+
+  <!-- ===================== DOCTOR TAB ===================== -->
+  <section id="panel-doctor" class="panel active">
+    <div class="card">
+      <h2>醫師登入</h2>
+      <p class="sub">請先選擇您的姓名並登入，才能開始填寫評鑑</p>
+      <div class="row-flex"><select id="doctorSelect"></select></div>
+      <div id="doctorAuthArea" style="margin-top:12px;"></div>
+    </div>
+
+    <div id="doctorFormArea" style="display:none;">
+      <div class="card">
+        <h2>1. 選擇助理與月份</h2>
+        <p class="sub">評分標準：1 幾乎無法完成　2 可以勉強執行　3 中規中矩的執行　4 執行的很不錯　5 執行的很完美</p>
+        <span class="field-label">助理</span>
+        <div class="row-flex" id="assistantPicker"></div>
+        <div style="height:12px"></div>
+        <span class="field-label">評鑑月份</span>
+        <input type="month" id="monthInput">
+      </div>
+
+      <div class="card">
+        <div class="progress-wrap">
+          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+          <div class="progress-text" id="progressText">已完成 0 / 24 題</div>
+        </div>
+      </div>
+
+      <div id="formSections"></div>
+
+      <div class="card">
+        <h2>醫師評論</h2>
+        <p class="sub">可針對本月整體表現、需要加強或值得肯定的地方自由填寫</p>
+        <textarea id="doctorComment" placeholder="輸入這位助理本月的評論⋯（選填，會與自動摘要一起保存）"></textarea>
+        <button class="btn-primary" id="submitBtn" disabled>送出評鑑</button>
+        <div id="submitHint" class="sub" style="margin-top:8px;text-align:center;"></div>
+      </div>
+
+      <div class="card result-card" id="resultCard" style="display:none;">
+        <h2 id="resultTitle">✅ 已送出</h2>
+        <div class="avg-grid" id="avgGrid"></div>
+        <p class="lbl" style="margin-top:2px;font-size:12.5px;font-weight:700;color:var(--muted);">自動產生的評論摘要</p>
+        <div class="summary-text" id="summaryText"></div>
+        <button class="btn-secondary" id="nextBtn" style="margin-top:14px;">填寫下一位助理</button>
+      </div>
+
+      <div class="card">
+        <h2>我的填寫紀錄</h2>
+        <p class="sub">只顯示您自己填寫過的評鑑，不包含其他醫師的紀錄</p>
+        <div id="myRecordsResult"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== STAFF TAB ===================== -->
+  <section id="panel-staff" class="panel">
+    <div class="card">
+      <h2>查詢個人評鑑紀錄</h2>
+      <p class="sub">選擇姓名查看歷史分數趨勢與每月評論</p>
+      <div class="row-flex">
+        <select id="staffSelect"></select>
+      </div>
+      <div id="staffAuthArea" style="margin-top:12px;"></div>
+    </div>
+    <div id="staffResult"></div>
+  </section>
+
+  <!-- ===================== ADMIN TAB ===================== -->
+  <section id="panel-overview" class="panel">
+    <div class="card">
+      <h2>管理員登入</h2>
+      <p class="sub">可查看全部評鑑資料，並重設任何人的通行碼</p>
+      <div id="adminAuthArea"></div>
+    </div>
+
+    <div id="adminContent" style="display:none;">
+      <div class="card">
+        <h2>全體助理最新評鑑總覽</h2>
+        <p class="sub">顯示每位助理最近一次的評鑑結果</p>
+        <button class="btn-secondary" id="overviewRefreshBtn">重新整理</button>
+      </div>
+      <div id="overviewResult"></div>
+
+      <div class="card">
+        <h2>重設通行碼</h2>
+        <p class="sub">選擇對象並清空通行碼，對方下次登入時就會進入「重新設定」畫面</p>
+        <div class="row-flex">
+          <select id="resetTargetSelect"></select>
+          <button class="btn-secondary" id="resetPasscodeBtn">清空通行碼</button>
+        </div>
+        <div id="resetMsg" class="sub" style="margin-top:8px;"></div>
+      </div>
+
+      <div class="card">
+        <h2>各醫師評分比較</h2>
+        <p class="sub">每位助理，各醫師平均給的總分，以及全體醫師平均</p>
+        <div id="doctorCompareResult" style="overflow-x:auto"></div>
+      </div>
+
+      <div class="card">
+        <h2>助理歷史查詢</h2>
+        <p class="sub">選擇任一助理，查看她從過去到現在的完整分數趨勢與每月回饋（管理員不需要她的通行碼）</p>
+        <div class="row-flex">
+          <select id="adminAssistantSelect"></select>
+          <button class="btn-secondary" id="adminAssistantQueryBtn">查詢</button>
+        </div>
+        <div id="adminAssistantResult"></div>
+      </div>
+
+      <div class="card">
+        <h2>完整評鑑紀錄</h2>
+        <p class="sub">可依醫師篩選</p>
+        <div class="row-flex">
+          <select id="historyFilterDoctor"><option value="">全部醫師</option></select>
+        </div>
+        <div id="fullHistoryResult" style="margin-top:12px;"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ============ CONFIG ============ */
+const API_BASE = 'https://vet-eval-proxy.tzu-chi916.workers.dev';
+const RESP_TABLE = 'tbl4gxtWdnW4udLsT';
+const PASS_TABLE = 'tblBUJ03PyzfKSKZg';
+const PASS_NAME_FIELD = 'fld66ZfrTCnbbAXqG';
+const PASS_CODE_FIELD = 'fldolWZnCqhvZPmyo';
+// Header labels (for on-screen use) and their matching Airtable field IDs, in the same order.
+const HEADERS = ['Timestamp','月份','助理姓名','櫃台_親合力','櫃台_電話應答','櫃台_LINE應答','櫃台_現場處理','櫃台_時間分配','櫃台_溝通態度','櫃台_預約紀錄','櫃台_結帳能力','櫃台_點貨登記','醫助_環境整潔','醫助_協助看診跟診','醫助_保定能力','醫助_補貨','醫助_配藥能力','醫助_醫療知識','醫助_積極照顧住院','醫助_手術麻醉照顧','團隊_相處和諧','團隊_觀察問題提出','團隊_協助優化醫院','團隊_溝通能力','團隊_彼此協助','出席_遲到次數','出席_臨時請假次數','櫃台平均','醫助平均','團隊平均','出席平均','總平均','醫師評論','自動摘要','填寫醫師','_recordId'];
+const RESP_FIELD_IDS = ['fldit5wfl2UcmEq08','fldxw5Vnb5rMNkHLB','fld22BqWKrEgAGccy','fldc29aD5sk5JK65c','fld4Y1NdDvDRhNwCW','fldhD2Egi91w7D4x8','fldl5goa6fFx2hvs5','fldztkhAQ5nBamkdj','fldCImp9GAIGFrM38','fldM1ykEUXw7qAY2O','fldnpmRIeLUIffquC','fldlM7vGEOlOR2fdh','fld8BjHS8qyHiH19P','fld7DJODiSiLZ40tV','fldkvNCshBZbVWHEe','fld8FHSiAGWfBpN7c','fld8u8hQH2pu4aZ0o','fldqoxoKB1nj4mxP2','fldoErAzoKTQJT7eQ','fldGLGUAyEJ2KEHnU','fldcFzyA4DmNC3HGU','fldOUr0ZjsIXSO0Li','fldtQvEav8HapvmgT','fldy7adnM3xlKhtDn','fldEfcEOEueoa8FoD','fld744dtAFqjUhi58','fldLIz596gqnMCvms','fldEfkRwVvHAXGCs0','fldVPgE3KBzfBHVPq','fldUusEZrUvKuTRw5','fldgFx825OjqPkK9G','fldGYX7j2PEnJolUz','fld2OKUQifBKoMGgA','flds0wVp6FZOEOxQL','fldcwFiWjeIjHrTq2'];
+const ASSISTANTS = ['家柔','商姿','宜廷（主任）','宜庭','紫晴'];
+const DOCTORS = ['鄭涵潔醫師','黃筠文醫師','王柏翔醫師','李文君醫師','楊采蓉醫師','戴子綺醫師'];
+const ADMIN_NAME = '管理員';
+
+const SECTIONS = [
+  { key:'櫃台', title:'一、櫃台評鑑', desc:'接待，結帳，預約門診，回答問題', items:[
+    {code:'親合力', label:'1. 親合力', desc:'是否會主動跟主人與動物打招呼，表現親切感'},
+    {code:'電話應答', label:'2. 電話應答', desc:'是否可以正確理解主人所問問題，以及醫師交代問題'},
+    {code:'LINE應答', label:'3. LINE 上應答能力', desc:'理解與回答問題能力，應答是否及時'},
+    {code:'現場處理', label:'4. 現場處理能力', desc:'對於現場詢問問題，是否可以正確回答'},
+    {code:'時間分配', label:'5. 時間分配能力', desc:'是否能夠妥善安排約診時間，與分配櫃台要處理事務的時間'},
+    {code:'溝通態度', label:'6. 與客人溝通態度', desc:'是否能夠有耐心地回答現場與電話中飼主的問題'},
+    {code:'預約紀錄', label:'7. 預約與紀錄', desc:'是否都有記得預約病例與妥善記錄病例'},
+    {code:'結帳能力', label:'8. 結帳能力', desc:'是否都可以準確迅速的完成開單與結帳'},
+    {code:'點貨登記', label:'9. 點貨登記與問題排除', desc:'點貨與登記是否確實，有問題時是否能獨立解決'},
+  ]},
+  { key:'醫助', title:'二、醫助評鑑', desc:'協助醫師，增加醫師看診效率，住院動物照顧能力', items:[
+    {code:'環境整潔', label:'1. 維持環境整潔', desc:'是否有主動維持環境整潔，早上與晚上關班有主動協助清潔'},
+    {code:'協助看診跟診', label:'2. 主動協助看診與跟診', desc:'是否可以觀察主治醫師需求及時提供協助'},
+    {code:'保定能力', label:'3. 保定能力', desc:'是否可以以準確的動作穩定的保定動物'},
+    {code:'補貨', label:'4. 補貨', desc:'可以發現貨品不足，主動補充並提出叫貨需求'},
+    {code:'配藥能力', label:'5. 配藥能力', desc:'配藥準確度與速度，並且完成檢核流程'},
+    {code:'醫療知識', label:'6. 醫療知識與能力', desc:'動物照顧相關知識，如預防針與結紮時程，動物生理數值，判斷動物狀況，準備醫師所需醫療流程準確度'},
+    {code:'積極照顧住院', label:'7. 積極主動照顧住院病患', desc:'是否有主動積極的照顧住院動物，並且細心觀察動物變化，提醒醫師動物的變化'},
+    {code:'手術麻醉照顧', label:'8. 手術麻醉照顧能力', desc:'可以完成手術前準備，手術中監控，手術後清洗器械與滅菌'},
+  ]},
+  { key:'團隊', title:'三、團隊和諧互助', desc:'團隊互助，溝通與優化團隊能力', items:[
+    {code:'相處和諧', label:'1. 與同事相處是否和諧', desc:'在同事有問題或需要協助時，是否可以主動提出協助'},
+    {code:'觀察問題提出', label:'2. 觀察問題並提出', desc:'是否可以發現醫院中的問題，並主動提出討論改善'},
+    {code:'協助優化醫院', label:'3. 協助優化醫院的能力', desc:'可以積極協助建立制度，與提出增加醫療品質制度的能力，增加醫院在飼主中的專業形象程度'},
+    {code:'溝通能力', label:'4. 溝通能力', desc:'如果與同事有不同意見，是否能夠溫和良好的溝通與討論'},
+    {code:'彼此協助', label:'5. 彼此協助', desc:'當另一個同事在忙的時候，是否可以協助幫忙快速完成工作'},
+  ]},
+  { key:'出席', title:'四、出席率', desc:'出缺勤比例', items:[
+    {code:'遲到次數', label:'1. 遲到次數', desc:'當月遲到次數比例（5 分代表全月無遲到）'},
+    {code:'臨時請假次數', label:'2. 臨時請假次數', desc:'當月臨時請假次數比例（5 分代表全月無臨時請假）'},
+  ]},
+];
+const TOTAL_ITEMS = SECTIONS.reduce((n,s)=>n+s.items.length,0); // 24
+
+/* ============ API HELPERS (fetch -> Netlify Function -> Airtable) ============ */
+async function apiCall(payload) {
+  let res;
+  try {
+    res = await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {
+    throw new Error('連線失敗，請確認網路狀態：' + (e && e.message ? e.message : String(e)));
+  }
+  let data;
+  try { data = await res.json(); }
+  catch (e) { throw new Error('伺服器回應無法解析'); }
+  if (!res.ok) {
+    const msg = (data && data.error && (data.error.message || JSON.stringify(data.error))) || JSON.stringify(data).slice(0,300);
+    throw new Error(msg);
+  }
+  return data;
+}
+
+async function appendRow(values) {
+  const fields = {};
+  RESP_FIELD_IDS.forEach((fid, i) => { fields[fid] = values[i]; });
+  await apiCall({ op: 'create', tableId: RESP_TABLE, fields });
+}
+
+// Returns [HEADERS, ...rows] so existing colIndexMap-based rendering code keeps working unchanged.
+async function readAllRows() {
+  const data = await apiCall({ op: 'list', tableId: RESP_TABLE });
+  const records = (data && data.records) || [];
+  const rows = records.map(r => {
+    const f = r.fields || {};
+    const vals = RESP_FIELD_IDS.map(fid => {
+      const v = f[fid];
+      return (v === undefined || v === null) ? '' : v;
+    });
+    vals.push(r.id); // matches the '_recordId' entry appended to HEADERS
+    return vals;
+  });
+  return [HEADERS, ...rows];
+}
+
+async function updateRecordFields(recordId, values) {
+  const fields = {};
+  RESP_FIELD_IDS.forEach((fid, i) => { fields[fid] = values[i]; });
+  await apiCall({ op: 'update', tableId: RESP_TABLE, recordId, fields });
+}
+
+// Look up a person's passcode row. Returns { recordId, code } — code is '' if not set yet.
+async function getPasscodeInfo(name) {
+  const data = await apiCall({ op: 'list', tableId: PASS_TABLE });
+  const records = (data && data.records) || [];
+  const match = records.find(r => (r.fields || {})[PASS_NAME_FIELD] === name);
+  if (!match) return { recordId: null, code: '' };
+  return { recordId: match.id, code: String((match.fields || {})[PASS_CODE_FIELD] || '').trim() };
+}
+
+// Write a newly self-set (or cleared) passcode for this person.
+async function setPasscode(name, code) {
+  const info = await getPasscodeInfo(name);
+  if (!info.recordId) throw new Error(`在「通行碼設定」找不到 ${name} 這筆資料，請聯絡管理員確認名單`);
+  const fields = {}; fields[PASS_CODE_FIELD] = code;
+  await apiCall({ op: 'update', tableId: PASS_TABLE, recordId: info.recordId, fields });
+}
+
+/* ============ STATE ============ */
+let currentAssistant = null;
+let currentDoctor = null;
+let currentAdmin = false;
+let editingRecordId = null; // set when the doctor is correcting a previously submitted record
+let scores = {}; // key: "section_code" -> 1-5
+let chartStaff = null, chartOverview = null;
+
+/* ============ INIT UI ============ */
+function initTabs() {
+  document.querySelectorAll('nav.tabs button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+      if (btn.dataset.tab === 'overview' && !currentAdmin) checkAdminStatus();
+    });
+  });
+}
+
+function initAssistantPicker() {
+  const wrap = document.getElementById('assistantPicker');
+  ASSISTANTS.forEach(name=>{
+    const b = document.createElement('button');
+    b.className = 'picker-btn'; b.textContent = name; b.dataset.name = name;
+    b.addEventListener('click', ()=>{
+      if (name !== currentAssistant) resetForm(true); // clear previous assistant's answers before switching
+      currentAssistant = name;
+      wrap.querySelectorAll('.picker-btn').forEach(x=>x.classList.remove('selected'));
+      b.classList.add('selected');
+      updateSubmitState();
+    });
+    wrap.appendChild(b);
+  });
+  // staff select
+  const sel = document.getElementById('staffSelect');
+  ASSISTANTS.forEach(name=>{
+    const o = document.createElement('option'); o.value=name; o.textContent=name; sel.appendChild(o);
+  });
+  // doctor select
+  const docSel = document.getElementById('doctorSelect');
+  DOCTORS.forEach(name=>{
+    const o = document.createElement('option'); o.value=name; o.textContent=name; docSel.appendChild(o);
+  });
+  // admin reset-target select (everyone)
+  const resetSel = document.getElementById('resetTargetSelect');
+  const groups = [['助理', ASSISTANTS], ['醫師', DOCTORS], ['管理員', [ADMIN_NAME]]];
+  groups.forEach(([label, names])=>{
+    const og = document.createElement('optgroup'); og.label = label;
+    names.forEach(name=>{
+      const o = document.createElement('option'); o.value=name; o.textContent=name; og.appendChild(o);
+    });
+    resetSel.appendChild(og);
+  });
+  // admin: assistant deep-dive select
+  const adminAstSel = document.getElementById('adminAssistantSelect');
+  ASSISTANTS.forEach(name=>{
+    const o = document.createElement('option'); o.value=name; o.textContent=name; adminAstSel.appendChild(o);
+  });
+  // admin: doctor filter for full history table
+  const histDocSel = document.getElementById('historyFilterDoctor');
+  DOCTORS.forEach(name=>{
+    const o = document.createElement('option'); o.value=name; o.textContent=name; histDocSel.appendChild(o);
+  });
+}
+
+function initMonthDefault() {
+  const d = new Date();
+  const ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  document.getElementById('monthInput').value = ym;
+}
+
+function buildForm() {
+  const container = document.getElementById('formSections');
+  container.innerHTML = '';
+  SECTIONS.forEach(section=>{
+    const card = document.createElement('div');
+    card.className = 'card section-card';
+    card.innerHTML = `<h2>${section.title}</h2><p class="sub">${section.desc}</p>`;
+    section.items.forEach(item=>{
+      const key = section.key + '_' + item.code;
+      const itemEl = document.createElement('div');
+      itemEl.className = 'item';
+      itemEl.innerHTML = `
+        <div class="item-label">${item.label}</div>
+        <div class="item-desc">${item.desc}</div>
+        <div class="score-row" data-key="${key}"></div>
+      `;
+      const row = itemEl.querySelector('.score-row');
+      for (let v=1; v<=5; v++) {
+        const btn = document.createElement('button');
+        btn.className = 'score-btn'; btn.textContent = v; btn.type = 'button';
+        btn.addEventListener('click', ()=>{
+          scores[key] = v;
+          row.querySelectorAll('.score-btn').forEach(x=>x.classList.remove('selected'));
+          btn.classList.add('selected');
+          updateProgress();
+        });
+        row.appendChild(btn);
+      }
+      card.appendChild(itemEl);
+    });
+    container.appendChild(card);
+  });
+}
+
+function updateProgress() {
+  const done = Object.keys(scores).length;
+  document.getElementById('progressFill').style.width = Math.round(done/TOTAL_ITEMS*100) + '%';
+  document.getElementById('progressText').textContent = `已完成 ${done} / ${TOTAL_ITEMS} 題`;
+  updateSubmitState();
+}
+
+function updateSubmitState() {
+  const done = Object.keys(scores).length;
+  const month = document.getElementById('monthInput').value;
+  const ready = done === TOTAL_ITEMS && currentAssistant && currentDoctor && month;
+  document.getElementById('submitBtn').disabled = !ready;
+  const hint = document.getElementById('submitHint');
+  if (ready) { hint.textContent = ''; }
+  else if (!currentDoctor) { hint.textContent = '尚未登入醫師帳號'; }
+  else if (!currentAssistant) { hint.textContent = '請先在上方選擇要評鑑的助理'; }
+  else if (!month) { hint.textContent = '請選擇評鑑月份'; }
+  else if (done < TOTAL_ITEMS) { hint.textContent = `還有 ${TOTAL_ITEMS - done} 題尚未填寫`; }
+  else { hint.textContent = ''; }
+}
+
+function resetForm(keepAssistant) {
+  scores = {};
+  editingRecordId = null;
+  document.getElementById('submitBtn').textContent = '送出評鑑';
+  const editNotice = document.getElementById('editNotice');
+  if (editNotice) editNotice.remove();
+  document.querySelectorAll('.score-btn.selected').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('doctorComment').value = '';
+  document.getElementById('resultCard').style.display = 'none';
+  if (!keepAssistant) {
+    currentAssistant = null;
+    document.querySelectorAll('#assistantPicker .picker-btn').forEach(b=>b.classList.remove('selected'));
+  }
+  updateProgress();
+}
+
+/* ============ SCORING / SUMMARY LOGIC ============ */
+function sectionAverage(sectionKey) {
+  const section = SECTIONS.find(s=>s.key===sectionKey);
+  const vals = section.items.map(it=>scores[sectionKey+'_'+it.code]);
+  return vals.reduce((a,b)=>a+b,0) / vals.length;
+}
+
+function gradeWord(avg) {
+  if (avg >= 4.5) return '非常優秀';
+  if (avg >= 4.0) return '表現優異';
+  if (avg >= 3.5) return '表現良好';
+  if (avg >= 3.0) return '中規中矩';
+  return '有待加強';
+}
+
+function attendanceComment(avg, name) {
+  if (avg >= 4.5) return `本月出勤狀況穩定，幾乎沒有遲到或臨時請假的情形`;
+  if (avg >= 3.5) return `本月出勤大致穩定，僅有少量遲到或請假紀錄`;
+  if (avg >= 2.5) return `本月出勤狀況需留意，遲到或臨時請假次數稍多`;
+  return `本月出勤狀況明顯需要改善，建議與${name}討論原因並提出改善計畫`;
+}
+
+function buildSummary(name, month, secAvg, overall) {
+  let maxKey = '櫃台', minKey = '櫃台';
+  ['醫助','團隊','櫃台'].forEach(k=>{
+    if (secAvg[k] > secAvg[maxKey]) maxKey = k;
+    if (secAvg[k] < secAvg[minKey]) minKey = k;
+  });
+
+  // 找最高分與最低分單項（不含出席）
+  let topItem=null, topScore=-1, lowItem=null, lowScore=6;
+  SECTIONS.forEach(s=>{
+    if (s.key==='出席') return;
+    s.items.forEach(it=>{
+      const v = scores[s.key+'_'+it.code];
+      if (v > topScore) { topScore = v; topItem = it.label.replace(/^\d+\.\s*/,''); }
+      if (v < lowScore) { lowScore = v; lowItem = it.label.replace(/^\d+\.\s*/,''); }
+    });
+  });
+
+  const sectionTitle = { 櫃台:'櫃台服務', 醫助:'醫療協助', 團隊:'團隊合作' };
+
+  let text = `${month} ${name} 的整體評鑑平均為 ${overall.toFixed(1)} / 5，${gradeWord(overall)}。`;
+  text += `在四大構面中，「${sectionTitle[maxKey]}」表現最突出，平均 ${secAvg[maxKey].toFixed(1)} 分，其中「${topItem}」掌握得相當好；`;
+  if (minKey !== maxKey) {
+    text += `相對來說，「${sectionTitle[minKey]}」還有進步空間，平均 ${secAvg[minKey].toFixed(1)} 分，「${lowItem}」可以再多加留意。`;
+  } else {
+    text += `各構面表現相當平均，沒有明顯落後的項目。`;
+  }
+  text += ` 出席方面，${attendanceComment(secAvg['出席'], name)}。`;
+  return text;
+}
+
+/* ============ SUBMIT ============ */
+async function submitEvaluation() {
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>資料寫入中...';
+  try {
+    const month = document.getElementById('monthInput').value;
+    const secAvg = {};
+    SECTIONS.forEach(s=>{ secAvg[s.key] = sectionAverage(s.key); });
+    const overall = (secAvg['櫃台']+secAvg['醫助']+secAvg['團隊']+secAvg['出席'])/4;
+    const comment = document.getElementById('doctorComment').value.trim();
+    const summary = buildSummary(currentAssistant, month, secAvg, overall);
+
+    const orderedScores = [];
+    SECTIONS.forEach(s=> s.items.forEach(it=> orderedScores.push(String(scores[s.key+'_'+it.code]))));
+
+    const row = [
+      new Date().toISOString(), month, currentAssistant,
+      ...orderedScores,
+      secAvg['櫃台'].toFixed(2), secAvg['醫助'].toFixed(2), secAvg['團隊'].toFixed(2), secAvg['出席'].toFixed(2), overall.toFixed(2),
+      comment, summary, currentDoctor
+    ];
+    const wasEdit = !!editingRecordId;
+    if (wasEdit) { await updateRecordFields(editingRecordId, row); }
+    else { await appendRow(row); }
+
+    document.getElementById('resultTitle').textContent = wasEdit
+      ? `✏️ ${currentAssistant}（${month}）評鑑已更新`
+      : `✅ ${currentAssistant}（${month}）評鑑已送出`;
+    const avgGrid = document.getElementById('avgGrid');
+    avgGrid.innerHTML = '';
+    [['總平均',overall],['櫃台',secAvg['櫃台']],['醫助',secAvg['醫助']],['團隊',secAvg['團隊']],['出席',secAvg['出席']]].forEach(([l,v])=>{
+      const box = document.createElement('div'); box.className='avg-box';
+      box.innerHTML = `<div class="n">${v.toFixed(1)}</div><div class="l">${l}</div>`;
+      avgGrid.appendChild(box);
+    });
+    document.getElementById('summaryText').textContent = summary;
+    document.getElementById('resultCard').style.display = 'block';
+    document.getElementById('resultCard').scrollIntoView({behavior:'smooth', block:'start'});
+    editingRecordId = null;
+    const editNotice = document.getElementById('editNotice');
+    if (editNotice) editNotice.remove();
+    loadMyRecords(currentDoctor);
+  } catch (err) {
+    alert('送出失敗，請稍後再試：\n' + err.message);
+  } finally {
+    btn.innerHTML = editingRecordId ? '更新評鑑' : '送出評鑑';
+    updateSubmitState();
+  }
+}
+
+/* ============ DOCTOR LOGIN ============ */
+function renderDoctorAuthArea(mode, extraMsg) {
+  const area = document.getElementById('doctorAuthArea');
+  if (mode === 'loading') { area.innerHTML = '<p class="sub">確認中...</p>'; return; }
+  if (mode === 'setup') {
+    area.innerHTML = `
+      <p class="sub">這是您第一次使用，請自己設定一組通行碼（至少4碼），之後登入都會用這組碼。</p>
+      <div class="row-flex">
+        <input type="password" id="drPcNew" placeholder="設定通行碼" inputmode="numeric" style="${pwInputStyle}">
+        <input type="password" id="drPcConfirm" placeholder="再輸入一次" inputmode="numeric" style="${pwInputStyle}">
+        <button class="btn-secondary" id="drPcSetupBtn">設定並登入</button>
+      </div>
+      ${extraMsg ? `<p class="sub" style="color:var(--red);margin-top:6px;">${extraMsg}</p>` : ''}
+    `;
+    document.getElementById('drPcSetupBtn').addEventListener('click', doDoctorSetup);
+  } else {
+    area.innerHTML = `
+      <div class="row-flex">
+        <input type="password" id="drPcLogin" placeholder="輸入通行碼" inputmode="numeric" style="${pwInputStyle}">
+        <button class="btn-secondary" id="drPcLoginBtn">登入</button>
+      </div>
+      <p class="sub" style="margin-top:6px;">忘記通行碼請洽管理員協助重設。</p>
+      ${extraMsg ? `<p class="sub" style="color:var(--red);">${extraMsg}</p>` : ''}
+    `;
+    document.getElementById('drPcLoginBtn').addEventListener('click', doDoctorLogin);
+  }
+}
+
+function lockDoctorForm() {
+  currentDoctor = null;
+  document.getElementById('doctorFormArea').style.display = 'none';
+  resetForm(false); // wipe any in-progress answers so the next doctor starts clean
+}
+
+function unlockDoctorForm(name) {
+  currentDoctor = name;
+  document.getElementById('doctorFormArea').style.display = 'block';
+  document.getElementById('doctorAuthArea').innerHTML = `<p class="sub">✅ 已登入：${name}（<a href="#" id="drLogoutLink">切換醫師</a>）</p>`;
+  document.getElementById('drLogoutLink').addEventListener('click', (e)=>{ e.preventDefault(); checkDoctorStatus(); });
+  updateSubmitState();
+  loadMyRecords(name);
+}
+
+async function checkDoctorStatus() {
+  lockDoctorForm();
+  const name = document.getElementById('doctorSelect').value;
+  renderDoctorAuthArea('loading');
+  try {
+    const info = await getPasscodeInfo(name);
+    renderDoctorAuthArea(info.code ? 'login' : 'setup');
+  } catch (err) {
+    document.getElementById('doctorAuthArea').innerHTML =
+      `<p class="sub" style="color:var(--red)">讀取通行碼設定失敗：${err.message}</p>
+       <button class="btn-secondary" id="drRetryBtn">重試</button>`;
+    document.getElementById('drRetryBtn').addEventListener('click', checkDoctorStatus);
+  }
+}
+
+async function doDoctorSetup() {
+  const name = document.getElementById('doctorSelect').value;
+  const pw1 = document.getElementById('drPcNew').value.trim();
+  const pw2 = document.getElementById('drPcConfirm').value.trim();
+  if (pw1.length < 4) { renderDoctorAuthArea('setup', '通行碼至少需要4碼'); return; }
+  if (pw1 !== pw2) { renderDoctorAuthArea('setup', '兩次輸入的通行碼不一致，請重新輸入'); return; }
+  const btn = document.getElementById('drPcSetupBtn');
+  btn.disabled = true; btn.textContent = '設定中...';
+  try {
+    const info = await getPasscodeInfo(name);
+    if (info.code) { renderDoctorAuthArea('login', '這個帳號已經有人設定過通行碼了，請直接登入'); return; }
+    await setPasscode(name, pw1);
+    unlockDoctorForm(name);
+  } catch (err) {
+    renderDoctorAuthArea('setup', '設定失敗：' + err.message);
+  }
+}
+
+async function doDoctorLogin() {
+  const name = document.getElementById('doctorSelect').value;
+  const pw = document.getElementById('drPcLogin').value.trim();
+  const btn = document.getElementById('drPcLoginBtn');
+  btn.disabled = true; btn.textContent = '登入中...';
+  try {
+    const info = await getPasscodeInfo(name);
+    if (!info.code || info.code !== pw) { renderDoctorAuthArea('login', '通行碼錯誤，請再試一次'); return; }
+    unlockDoctorForm(name);
+  } catch (err) {
+    renderDoctorAuthArea('login', '登入失敗：' + err.message);
+  }
+}
+
+async function loadMyRecords(doctorName) {
+  const box = document.getElementById('myRecordsResult');
+  box.innerHTML = '<p class="sub">讀取中...</p>';
+  try {
+    const rows = await readAllRows();
+    if (rows.length < 2) { box.innerHTML = '<p class="sub">目前尚無任何評鑑資料</p>'; return; }
+    const map = colIndexMap(rows[0]);
+    const mine = rows.slice(1).filter(r => r[map['填寫醫師']] === doctorName);
+    if (mine.length === 0) { box.innerHTML = '<p class="sub">您還沒有填寫過任何評鑑</p>'; return; }
+    mine.sort((a,b)=> (a[map['月份']] < b[map['月份']] ? 1 : -1));
+    box.innerHTML = '';
+    mine.forEach(r=>{
+      const div = document.createElement('div');
+      div.className = 'month-card';
+      div.innerHTML = `
+        <div class="mh"><span class="m">${r[map['助理姓名']]} · ${r[map['月份']]}</span><span class="avg">總平均 ${r[map['總平均']]}</span></div>
+      `;
+      const editBtn = document.createElement('button');
+      editBtn.className = 'btn-secondary';
+      editBtn.style.marginTop = '8px';
+      editBtn.textContent = '填錯了？點這裡修改';
+      editBtn.addEventListener('click', ()=> startEditRecord(r[map['_recordId']]));
+      div.appendChild(editBtn);
+      box.appendChild(div);
+    });
+  } catch (err) {
+    box.innerHTML = `<p class="sub" style="color:var(--red)">讀取失敗：${err.message}</p>`;
+  }
+}
+
+// Load a previously submitted record back into the form so the doctor can correct and re-submit it.
+async function startEditRecord(recordId) {
+  const box = document.getElementById('myRecordsResult');
+  try {
+    const rows = await readAllRows();
+    const map = colIndexMap(rows[0]);
+    const row = rows.slice(1).find(r => r[map['_recordId']] === recordId);
+    if (!row) { alert('找不到這筆紀錄，可能已被刪除，請重新整理再試一次'); return; }
+
+    resetForm(false);
+    editingRecordId = recordId;
+    currentAssistant = row[map['助理姓名']];
+    document.getElementById('monthInput').value = row[map['月份']];
+    document.querySelectorAll('#assistantPicker .picker-btn').forEach(b=>{
+      b.classList.toggle('selected', b.dataset.name === currentAssistant);
+    });
+    document.getElementById('doctorComment').value = row[map['醫師評論']] || '';
+
+    SECTIONS.forEach(s=> s.items.forEach(it=>{
+      const key = s.key + '_' + it.code;
+      const v = parseInt(row[map[key]], 10);
+      if (!v) return;
+      scores[key] = v;
+      const rowEl = document.querySelector(`.score-row[data-key="${key}"]`);
+      if (rowEl && rowEl.children[v-1]) rowEl.children[v-1].classList.add('selected');
+    }));
+    updateProgress();
+
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.textContent = '更新評鑑';
+    const card = submitBtn.closest('.card');
+    if (card && !document.getElementById('editNotice')) {
+      const notice = document.createElement('p');
+      notice.id = 'editNotice';
+      notice.className = 'sub';
+      notice.style.color = 'var(--amber)';
+      notice.innerHTML = `目前正在修改 ${currentAssistant}（${row[map['月份']]}）的紀錄 — <a href="#" id="cancelEditLink">取消修改</a>`;
+      card.insertBefore(notice, card.firstElementChild.nextElementSibling);
+      document.getElementById('cancelEditLink').addEventListener('click', (e)=>{ e.preventDefault(); resetForm(false); });
+    }
+    document.getElementById('formSections').scrollIntoView({behavior:'smooth', block:'start'});
+  } catch (err) {
+    alert('讀取這筆紀錄失敗：' + err.message);
+  }
+}
+
+/* ============ STAFF QUERY ============ */
+function colIndexMap(header) {
+  const map = {};
+  if (Array.isArray(header)) header.forEach((h,i)=> map[h]=i);
+  return map;
+}
+
+const pwInputStyle = 'padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13.5px;width:150px;';
+
+function renderAuthArea(mode, extraMsg) {
+  const area = document.getElementById('staffAuthArea');
+  if (mode === 'loading') {
+    area.innerHTML = '<p class="sub">確認中...</p>';
+    return;
+  }
+  if (mode === 'setup') {
+    area.innerHTML = `
+      <p class="sub">這是您第一次查詢，請自己設定一組通行碼（至少4碼），之後查詢都會用這組碼登入。</p>
+      <div class="row-flex">
+        <input type="password" id="pcNew" placeholder="設定通行碼" inputmode="numeric" style="${pwInputStyle}">
+        <input type="password" id="pcConfirm" placeholder="再輸入一次" inputmode="numeric" style="${pwInputStyle}">
+        <button class="btn-secondary" id="pcSetupBtn">設定並查詢</button>
+      </div>
+      ${extraMsg ? `<p class="sub" style="color:var(--red);margin-top:6px;">${extraMsg}</p>` : ''}
+    `;
+    document.getElementById('pcSetupBtn').addEventListener('click', doSetupAndQuery);
+  } else {
+    area.innerHTML = `
+      <div class="row-flex">
+        <input type="password" id="pcLogin" placeholder="輸入通行碼" inputmode="numeric" style="${pwInputStyle}">
+        <button class="btn-secondary" id="pcLoginBtn">查詢</button>
+      </div>
+      <p class="sub" style="margin-top:6px;">忘記通行碼請洽診所協助重設。</p>
+      ${extraMsg ? `<p class="sub" style="color:var(--red);">${extraMsg}</p>` : ''}
+    `;
+    document.getElementById('pcLoginBtn').addEventListener('click', doLoginAndQuery);
+  }
+}
+
+async function checkStatus() {
+  const name = document.getElementById('staffSelect').value;
+  document.getElementById('staffResult').innerHTML = '';
+  renderAuthArea('loading');
+  try {
+    const info = await getPasscodeInfo(name);
+    renderAuthArea(info.code ? 'login' : 'setup');
+  } catch (err) {
+    document.getElementById('staffAuthArea').innerHTML =
+      `<p class="sub" style="color:var(--red)">讀取通行碼設定失敗：${err.message}</p>
+       <button class="btn-secondary" id="retryAuthBtn">重試</button>`;
+    document.getElementById('retryAuthBtn').addEventListener('click', checkStatus);
+  }
+}
+
+async function doSetupAndQuery() {
+  const name = document.getElementById('staffSelect').value;
+  const pw1 = document.getElementById('pcNew').value.trim();
+  const pw2 = document.getElementById('pcConfirm').value.trim();
+  if (pw1.length < 4) { renderAuthArea('setup', '通行碼至少需要4碼'); return; }
+  if (pw1 !== pw2) { renderAuthArea('setup', '兩次輸入的通行碼不一致，請重新輸入'); return; }
+  const btn = document.getElementById('pcSetupBtn');
+  btn.disabled = true; btn.textContent = '設定中...';
+  try {
+    const info = await getPasscodeInfo(name);
+    if (info.code) { renderAuthArea('login', '這個帳號已經有人設定過通行碼了，請直接登入'); return; }
+    await setPasscode(name, pw1);
+    await loadStaffData(name);
+  } catch (err) {
+    renderAuthArea('setup', '設定失敗：' + err.message);
+  }
+}
+
+async function doLoginAndQuery() {
+  const name = document.getElementById('staffSelect').value;
+  const pw = document.getElementById('pcLogin').value.trim();
+  const btn = document.getElementById('pcLoginBtn');
+  btn.disabled = true; btn.textContent = '查詢中...';
+  try {
+    const info = await getPasscodeInfo(name);
+    if (!info.code || info.code !== pw) {
+      renderAuthArea('login', '通行碼錯誤，請再試一次');
+      return;
+    }
+    await loadStaffData(name);
+  } catch (err) {
+    renderAuthArea('login', '查詢失敗：' + err.message);
+  }
+}
+
+async function loadStaffData(name) {
+  const resultDiv = document.getElementById('staffResult');
+  resultDiv.innerHTML = '<div class="card"><div class="empty-state">查詢中...</div></div>';
+  try {
+    const rows = await readAllRows();
+    if (rows.length < 2) { resultDiv.innerHTML = '<div class="card"><div class="empty-state">目前尚無任何評鑑資料</div></div>'; return; }
+    const map = colIndexMap(rows[0]);
+    const mine = rows.slice(1).filter(r=> r[map['助理姓名']] === name && r[map['月份']]);
+    if (mine.length === 0) {
+      resultDiv.innerHTML = `<div class="card"><div class="empty-state">尚未有 ${name} 的評鑑紀錄</div></div>`;
+      return;
+    }
+    mine.sort((a,b)=> (a[map['月份']] > b[map['月份']] ? 1 : -1));
+
+    let html = '<div class="card"><h2>總平均趨勢</h2><div class="chart-box"><canvas id="staffChart"></canvas></div></div>';
+    html += '<div class="card"><h2>各構面（最近一次）</h2><div class="chart-box"><canvas id="staffSectionChart"></canvas></div></div>';
+    html += '<div class="card"><h2>歷史評論與摘要</h2></div>';
+    resultDiv.innerHTML = html;
+
+    // history cards (reverse chronological), appended after the header card
+    const histCard = resultDiv.lastElementChild;
+    [...mine].reverse().forEach(r=>{
+      const div = document.createElement('div');
+      div.className = 'card month-card';
+      const comment = r[map['醫師評論']] || '（醫師本月未填寫額外評論）';
+      const summary = r[map['自動摘要']] || '';
+      div.innerHTML = `
+        <div class="mh"><span class="m">${r[map['月份']]}</span><span class="avg">總平均 ${r[map['總平均']]}</span></div>
+        <div class="lbl">自動摘要</div>
+        <div class="summary-text">${summary}</div>
+        <div class="lbl">醫師評論</div>
+        <div class="summary-text">${comment}</div>
+      `;
+      resultDiv.appendChild(div);
+    });
+
+    // charts
+    const labels = mine.map(r=>r[map['月份']]);
+    const totals = mine.map(r=>parseFloat(r[map['總平均']])||0);
+    if (chartStaff) chartStaff.destroy();
+    chartStaff = new Chart(document.getElementById('staffChart'), {
+      type:'line',
+      data:{ labels, datasets:[{ label:'總平均', data:totals, borderColor:'#0d9488', backgroundColor:'#ccfbf1', tension:.3, fill:true, pointRadius:4 }] },
+      options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ min:0, max:5 } }, plugins:{ legend:{ display:false } } }
+    });
+
+    const latest = mine[mine.length-1];
+    if (chartOverview) { /* no-op, separate instance below */ }
+    if (window.__staffSectionChart) window.__staffSectionChart.destroy();
+    window.__staffSectionChart = new Chart(document.getElementById('staffSectionChart'), {
+      type:'bar',
+      data:{ labels:['櫃台','醫助','團隊','出席'], datasets:[{ label:latest[map['月份']],
+        data:['櫃台平均','醫助平均','團隊平均','出席平均'].map(k=>parseFloat(latest[map[k]])||0),
+        backgroundColor:['#0d9488','#0f766e','#14b8a6','#5eead4'] }] },
+      options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ min:0, max:5 } }, plugins:{ legend:{ display:false } } }
+    });
+  } catch (err) {
+    resultDiv.innerHTML = `<div class="card"><div class="empty-state">讀取失敗：${err.message}</div></div>`;
+  }
+}
+
+/* ============ ADMIN LOGIN ============ */
+function renderAdminAuthArea(mode, extraMsg) {
+  const area = document.getElementById('adminAuthArea');
+  if (mode === 'loading') { area.innerHTML = '<p class="sub">確認中...</p>'; return; }
+  if (mode === 'setup') {
+    area.innerHTML = `
+      <p class="sub">這是第一次使用管理員頁面，請自己設定一組通行碼（至少4碼）。</p>
+      <div class="row-flex">
+        <input type="password" id="adPcNew" placeholder="設定通行碼" inputmode="numeric" style="${pwInputStyle}">
+        <input type="password" id="adPcConfirm" placeholder="再輸入一次" inputmode="numeric" style="${pwInputStyle}">
+        <button class="btn-secondary" id="adPcSetupBtn">設定並登入</button>
+      </div>
+      ${extraMsg ? `<p class="sub" style="color:var(--red);margin-top:6px;">${extraMsg}</p>` : ''}
+    `;
+    document.getElementById('adPcSetupBtn').addEventListener('click', doAdminSetup);
+  } else {
+    area.innerHTML = `
+      <div class="row-flex">
+        <input type="password" id="adPcLogin" placeholder="輸入通行碼" inputmode="numeric" style="${pwInputStyle}">
+        <button class="btn-secondary" id="adPcLoginBtn">登入</button>
+      </div>
+      ${extraMsg ? `<p class="sub" style="color:var(--red);margin-top:6px;">${extraMsg}</p>` : ''}
+    `;
+    document.getElementById('adPcLoginBtn').addEventListener('click', doAdminLogin);
+  }
+}
+
+function unlockAdmin() {
+  currentAdmin = true;
+  document.getElementById('adminAuthArea').innerHTML = '<p class="sub">✅ 管理員已登入</p>';
+  document.getElementById('adminContent').style.display = 'block';
+  loadOverview();
+  loadDoctorCompare();
+  loadFullHistory();
+}
+
+async function checkAdminStatus() {
+  renderAdminAuthArea('loading');
+  try {
+    const info = await getPasscodeInfo(ADMIN_NAME);
+    renderAdminAuthArea(info.code ? 'login' : 'setup');
+  } catch (err) {
+    document.getElementById('adminAuthArea').innerHTML =
+      `<p class="sub" style="color:var(--red)">讀取通行碼設定失敗：${err.message}</p>
+       <button class="btn-secondary" id="adRetryBtn">重試</button>`;
+    document.getElementById('adRetryBtn').addEventListener('click', checkAdminStatus);
+  }
+}
+
+async function doAdminSetup() {
+  const pw1 = document.getElementById('adPcNew').value.trim();
+  const pw2 = document.getElementById('adPcConfirm').value.trim();
+  if (pw1.length < 4) { renderAdminAuthArea('setup', '通行碼至少需要4碼'); return; }
+  if (pw1 !== pw2) { renderAdminAuthArea('setup', '兩次輸入的通行碼不一致，請重新輸入'); return; }
+  const btn = document.getElementById('adPcSetupBtn');
+  btn.disabled = true; btn.textContent = '設定中...';
+  try {
+    const info = await getPasscodeInfo(ADMIN_NAME);
+    if (info.code) { renderAdminAuthArea('login', '已經有人設定過管理員通行碼了，請直接登入'); return; }
+    await setPasscode(ADMIN_NAME, pw1);
+    unlockAdmin();
+  } catch (err) {
+    renderAdminAuthArea('setup', '設定失敗：' + err.message);
+  }
+}
+
+async function doAdminLogin() {
+  const pw = document.getElementById('adPcLogin').value.trim();
+  const btn = document.getElementById('adPcLoginBtn');
+  btn.disabled = true; btn.textContent = '登入中...';
+  try {
+    const info = await getPasscodeInfo(ADMIN_NAME);
+    if (!info.code || info.code !== pw) { renderAdminAuthArea('login', '通行碼錯誤，請再試一次'); return; }
+    unlockAdmin();
+  } catch (err) {
+    renderAdminAuthArea('login', '登入失敗：' + err.message);
+  }
+}
+
+async function handleResetPasscode() {
+  const name = document.getElementById('resetTargetSelect').value;
+  const btn = document.getElementById('resetPasscodeBtn');
+  const msg = document.getElementById('resetMsg');
+  btn.disabled = true; btn.textContent = '處理中...';
+  try {
+    await setPasscode(name, '');
+    msg.textContent = `已清空 ${name} 的通行碼，對方下次查詢/登入時會進入重新設定畫面。`;
+    msg.style.color = 'var(--green)';
+  } catch (err) {
+    msg.textContent = '重設失敗：' + err.message;
+    msg.style.color = 'var(--red)';
+  } finally {
+    btn.disabled = false; btn.textContent = '清空通行碼';
+  }
+}
+
+async function loadDoctorCompare() {
+  const box = document.getElementById('doctorCompareResult');
+  box.innerHTML = '<p class="sub">讀取中...</p>';
+  try {
+    const rows = await readAllRows();
+    if (rows.length < 2) { box.innerHTML = '<p class="sub">目前尚無任何評鑑資料</p>'; return; }
+    const map = colIndexMap(rows[0]);
+    const all = rows.slice(1).filter(r => r[map['助理姓名']]);
+    const data = {};
+    ASSISTANTS.forEach(a=>{ data[a] = { __all: { sum:0, count:0 } }; DOCTORS.forEach(d=> data[a][d] = { sum:0, count:0 }); });
+    all.forEach(r=>{
+      const a = r[map['助理姓名']];
+      const d = r[map['填寫醫師']];
+      const total = parseFloat(r[map['總平均']]) || 0;
+      if (!data[a]) return;
+      if (d && data[a][d]) { data[a][d].sum += total; data[a][d].count += 1; }
+      data[a].__all.sum += total; data[a].__all.count += 1;
+    });
+    let html = '<table class="ov"><tr><th style="text-align:left">助理</th>';
+    DOCTORS.forEach(d => { html += `<th>${d.replace('醫師','')}</th>`; });
+    html += '<th>全體平均</th></tr>';
+    ASSISTANTS.forEach(a=>{
+      html += `<tr><td class="name">${a}</td>`;
+      DOCTORS.forEach(d=>{
+        const cell = data[a][d];
+        html += `<td>${cell.count ? (cell.sum/cell.count).toFixed(2) : '—'}</td>`;
+      });
+      const allCell = data[a].__all;
+      html += `<td><b>${allCell.count ? (allCell.sum/allCell.count).toFixed(2) : '—'}</b></td></tr>`;
+    });
+    html += '</table>';
+    box.innerHTML = html;
+  } catch (err) {
+    box.innerHTML = `<p class="sub" style="color:var(--red)">讀取失敗：${err.message}</p>`;
+  }
+}
+
+let chartAdminAssistant = null, chartAdminAssistantSection = null;
+async function loadAdminAssistantHistory(name) {
+  const resultDiv = document.getElementById('adminAssistantResult');
+  resultDiv.innerHTML = '<p class="sub">查詢中...</p>';
+  try {
+    const rows = await readAllRows();
+    if (rows.length < 2) { resultDiv.innerHTML = '<p class="sub">目前尚無任何評鑑資料</p>'; return; }
+    const map = colIndexMap(rows[0]);
+    const mine = rows.slice(1).filter(r=> r[map['助理姓名']] === name && r[map['月份']]);
+    if (mine.length === 0) { resultDiv.innerHTML = `<p class="sub">尚未有 ${name} 的評鑑紀錄</p>`; return; }
+    mine.sort((a,b)=> (a[map['月份']] > b[map['月份']] ? 1 : -1));
+
+    let html = '<div class="chart-box" style="margin-top:10px;"><canvas id="adminAstChart"></canvas></div>';
+    html += '<div class="chart-box" style="margin-top:18px;"><canvas id="adminAstSectionChart"></canvas></div>';
+    resultDiv.innerHTML = html;
+
+    [...mine].reverse().forEach(r=>{
+      const div = document.createElement('div');
+      div.className = 'card month-card';
+      const comment = r[map['醫師評論']] || '（醫師本月未填寫額外評論）';
+      const summary = r[map['自動摘要']] || '';
+      div.innerHTML = `
+        <div class="mh"><span class="m">${r[map['月份']]} · ${r[map['填寫醫師']]||'—'}</span><span class="avg">總平均 ${r[map['總平均']]}</span></div>
+        <div class="lbl">自動摘要</div>
+        <div class="summary-text">${summary}</div>
+        <div class="lbl">醫師評論</div>
+        <div class="summary-text">${comment}</div>
+      `;
+      resultDiv.appendChild(div);
+    });
+
+    const labels = mine.map(r=>r[map['月份']]);
+    const totals = mine.map(r=>parseFloat(r[map['總平均']])||0);
+    if (chartAdminAssistant) chartAdminAssistant.destroy();
+    chartAdminAssistant = new Chart(document.getElementById('adminAstChart'), {
+      type:'line',
+      data:{ labels, datasets:[{ label:'總平均', data:totals, borderColor:'#0d9488', backgroundColor:'#ccfbf1', tension:.3, fill:true, pointRadius:4 }] },
+      options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ min:0, max:5 } }, plugins:{ legend:{ display:false } } }
+    });
+
+    const latest = mine[mine.length-1];
+    if (chartAdminAssistantSection) chartAdminAssistantSection.destroy();
+    chartAdminAssistantSection = new Chart(document.getElementById('adminAstSectionChart'), {
+      type:'bar',
+      data:{ labels:['櫃台','醫助','團隊','出席'], datasets:[{ label:latest[map['月份']],
+        data:['櫃台平均','醫助平均','團隊平均','出席平均'].map(k=>parseFloat(latest[map[k]])||0),
+        backgroundColor:['#0d9488','#0f766e','#14b8a6','#5eead4'] }] },
+      options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ min:0, max:5 } }, plugins:{ legend:{ display:false } } }
+    });
+  } catch (err) {
+    resultDiv.innerHTML = `<p class="sub" style="color:var(--red)">讀取失敗：${err.message}</p>`;
+  }
+}
+
+async function loadFullHistory() {
+  const box = document.getElementById('fullHistoryResult');
+  box.innerHTML = '<p class="sub">讀取中...</p>';
+  try {
+    const rows = await readAllRows();
+    if (rows.length < 2) { box.innerHTML = '<p class="sub">目前尚無任何評鑑資料</p>'; return; }
+    const map = colIndexMap(rows[0]);
+    const doctorFilter = document.getElementById('historyFilterDoctor').value;
+    let all = rows.slice(1).filter(r => r[map['助理姓名']]);
+    if (doctorFilter) all = all.filter(r => r[map['填寫醫師']] === doctorFilter);
+    if (all.length === 0) { box.innerHTML = '<p class="sub">這個篩選條件下沒有資料</p>'; return; }
+    all.sort((a,b)=> (a[map['月份']] < b[map['月份']] ? 1 : -1));
+    let html = '<div style="overflow-x:auto"><table class="ov"><tr><th style="text-align:left">助理</th><th>月份</th><th>填寫醫師</th><th>總平均</th><th>櫃台</th><th>醫助</th><th>團隊</th><th>出席</th></tr>';
+    all.forEach(r=>{
+      html += `<tr>
+        <td class="name">${r[map['助理姓名']]}</td>
+        <td>${r[map['月份']]}</td>
+        <td>${r[map['填寫醫師']] || ''}</td>
+        <td>${r[map['總平均']]}</td>
+        <td>${r[map['櫃台平均']]}</td><td>${r[map['醫助平均']]}</td><td>${r[map['團隊平均']]}</td><td>${r[map['出席平均']]}</td>
+      </tr>`;
+    });
+    html += '</table></div>';
+    box.innerHTML = html;
+  } catch (err) {
+    box.innerHTML = `<p class="sub" style="color:var(--red)">讀取失敗：${err.message}</p>`;
+  }
+}
+
+/* ============ OVERVIEW ============ */
+async function loadOverview() {
+  const resultDiv = document.getElementById('overviewResult');
+  resultDiv.innerHTML = '<div class="card"><div class="empty-state">讀取中...</div></div>';
+  try {
+    const rows = await readAllRows();
+    if (rows.length < 2) { resultDiv.innerHTML = '<div class="card"><div class="empty-state">目前尚無任何評鑑資料</div></div>'; return; }
+    const map = colIndexMap(rows[0]);
+    const latestByName = {};
+    rows.slice(1).forEach(r=>{
+      const name = r[map['助理姓名']];
+      if (!name) return;
+      if (!latestByName[name] || r[map['月份']] > latestByName[name][map['月份']]) latestByName[name] = r;
+    });
+
+    let tableHtml = `<div class="card"><h2>各助理最新一次評鑑</h2><div style="overflow-x:auto"><table class="ov">
+      <tr><th style="text-align:left">助理</th><th>月份</th><th>總平均</th><th>櫃台</th><th>醫助</th><th>團隊</th><th>出席</th></tr>`;
+    const chartLabels = [], chartData = [];
+    ASSISTANTS.forEach(name=>{
+      const r = latestByName[name];
+      if (!r) {
+        tableHtml += `<tr><td class="name">${name}</td><td colspan="6" style="color:var(--muted)">尚無資料</td></tr>`;
+        return;
+      }
+      const total = parseFloat(r[map['總平均']])||0;
+      const pillClass = total>=4 ? 'g' : (total>=3 ? 'a' : 'r');
+      tableHtml += `<tr>
+        <td class="name">${name}</td>
+        <td>${r[map['月份']]}</td>
+        <td><span class="pill ${pillClass}">${total.toFixed(1)}</span></td>
+        <td>${r[map['櫃台平均']]}</td><td>${r[map['醫助平均']]}</td><td>${r[map['團隊平均']]}</td><td>${r[map['出席平均']]}</td>
+      </tr>`;
+      chartLabels.push(name); chartData.push(total);
+    });
+    tableHtml += '</table></div></div>';
+    tableHtml += '<div class="card"><h2>總平均比較</h2><div class="chart-box"><canvas id="overviewChart"></canvas></div></div>';
+    resultDiv.innerHTML = tableHtml;
+
+    if (chartOverview) chartOverview.destroy();
+    chartOverview = new Chart(document.getElementById('overviewChart'), {
+      type:'bar',
+      data:{ labels:chartLabels, datasets:[{ label:'總平均', data:chartData, backgroundColor:'#0d9488' }] },
+      options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ min:0, max:5 } }, plugins:{ legend:{ display:false } } }
+    });
+  } catch (err) {
+    resultDiv.innerHTML = `<div class="card"><div class="empty-state">讀取失敗：${err.message}</div></div>`;
+  }
+}
+
+/* ============ WIRE UP ============ */
+document.getElementById('monthInput').addEventListener('change', updateSubmitState);
+document.getElementById('submitBtn').addEventListener('click', submitEvaluation);
+document.getElementById('nextBtn').addEventListener('click', ()=> resetForm(false));
+document.getElementById('staffSelect').addEventListener('change', checkStatus);
+document.getElementById('overviewRefreshBtn').addEventListener('click', loadOverview);
+document.getElementById('doctorSelect').addEventListener('change', checkDoctorStatus);
+document.getElementById('resetPasscodeBtn').addEventListener('click', handleResetPasscode);
+document.getElementById('historyFilterDoctor').addEventListener('change', loadFullHistory);
+document.getElementById('adminAssistantQueryBtn').addEventListener('click', ()=> loadAdminAssistantHistory(document.getElementById('adminAssistantSelect').value));
+
+initTabs();
+initAssistantPicker();
+initMonthDefault();
+buildForm();
+updateProgress();
+checkStatus();
+checkDoctorStatus();
+</script>
+</body>
+</html>
