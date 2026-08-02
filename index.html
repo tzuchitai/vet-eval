@@ -243,6 +243,24 @@
       </div>
 
       <div class="card">
+        <h2>清空評鑑紀錄</h2>
+        <p class="sub" style="color:var(--red)">⚠️ 這裡的動作會直接刪除 Airtable 中的資料，無法復原，請小心操作</p>
+
+        <span class="field-label">清空指定醫師的全部紀錄</span>
+        <div class="row-flex">
+          <select id="clearDoctorSelect"></select>
+          <button class="btn-secondary" id="clearDoctorBtn" style="color:var(--red);border-color:var(--red);">清空此醫師所有紀錄</button>
+        </div>
+        <div id="clearDoctorMsg" class="sub" style="margin-top:8px;"></div>
+
+        <div style="height:18px"></div>
+
+        <span class="field-label">清空全部評鑑紀錄（全系統重置）</span>
+        <button class="btn-secondary" id="clearAllBtn" style="color:var(--red);border-color:var(--red);">清空全部評鑑紀錄</button>
+        <div id="clearAllMsg" class="sub" style="margin-top:8px;"></div>
+      </div>
+
+      <div class="card">
         <h2>各醫師評分比較</h2>
         <p class="sub">每位助理，各醫師平均給的總分，以及全體醫師平均</p>
         <div id="doctorCompareResult" style="overflow-x:auto"></div>
@@ -370,6 +388,12 @@ async function updateRecordFields(recordId, values) {
   await apiCall({ op: 'update', tableId: RESP_TABLE, recordId, fields });
 }
 
+// Permanently deletes one or more records. Used by the admin "清空紀錄" tools — irreversible.
+async function deleteRecords(tableId, recordIds) {
+  if (!recordIds || recordIds.length === 0) return;
+  await apiCall({ op: 'delete', tableId, recordIds });
+}
+
 // Look up a person's passcode row. Returns { recordId, code } — code is '' if not set yet.
 async function getPasscodeInfo(name) {
   const data = await apiCall({ op: 'list', tableId: PASS_TABLE });
@@ -451,6 +475,11 @@ function initAssistantPicker() {
   const histDocSel = document.getElementById('historyFilterDoctor');
   DOCTORS.forEach(name=>{
     const o = document.createElement('option'); o.value=name; o.textContent=name; histDocSel.appendChild(o);
+  });
+  // admin: clear-records-by-doctor select
+  const clearDocSel = document.getElementById('clearDoctorSelect');
+  DOCTORS.forEach(name=>{
+    const o = document.createElement('option'); o.value=name; o.textContent=name; clearDocSel.appendChild(o);
   });
 }
 
@@ -1065,6 +1094,87 @@ async function handleResetPasscode() {
   }
 }
 
+/* ============ CLEAR RECORDS (irreversible admin tools) ============ */
+
+// Single-record delete, triggered from a "刪除" button in the 完整評鑑紀錄 table.
+async function deleteOneRecord(recordId) {
+  if (!confirm('確定要刪除這一筆評鑑紀錄嗎？此動作無法復原。')) return;
+  try {
+    await deleteRecords(RESP_TABLE, [recordId]);
+    loadOverview();
+    loadDoctorCompare();
+    loadFullHistory();
+  } catch (err) {
+    alert('刪除失敗：' + err.message);
+  }
+}
+
+// Deletes every record filled in by one selected doctor.
+async function handleClearDoctor() {
+  const doctor = document.getElementById('clearDoctorSelect').value;
+  const msg = document.getElementById('clearDoctorMsg');
+  msg.textContent = '';
+  if (!confirm(`確定要刪除「${doctor}」填寫過的所有評鑑紀錄嗎？此動作無法復原。`)) return;
+  const btn = document.getElementById('clearDoctorBtn');
+  btn.disabled = true; btn.textContent = '刪除中...';
+  try {
+    const rows = await readAllRows();
+    const map = colIndexMap(rows[0]);
+    const ids = rows.slice(1).filter(r => r[map['填寫醫師']] === doctor).map(r => r[map['_recordId']]);
+    if (ids.length === 0) {
+      msg.textContent = `${doctor} 目前沒有任何紀錄`;
+      msg.style.color = 'var(--muted)';
+      return;
+    }
+    await deleteRecords(RESP_TABLE, ids);
+    msg.textContent = `已刪除 ${doctor} 的 ${ids.length} 筆紀錄`;
+    msg.style.color = 'var(--green)';
+    loadOverview();
+    loadDoctorCompare();
+    loadFullHistory();
+  } catch (err) {
+    msg.textContent = '刪除失敗：' + err.message;
+    msg.style.color = 'var(--red)';
+  } finally {
+    btn.disabled = false; btn.textContent = '清空此醫師所有紀錄';
+  }
+}
+
+// Deletes every evaluation record in the system. Requires typing a confirmation phrase.
+async function handleClearAll() {
+  const msg = document.getElementById('clearAllMsg');
+  msg.textContent = '';
+  const typed = prompt('這會刪除「全部」醫師、全部助理的所有評鑑紀錄，且無法復原。\n請輸入「清空全部」以確認：');
+  if (typed !== '清空全部') {
+    msg.textContent = '已取消（輸入不符，未執行任何刪除）';
+    msg.style.color = 'var(--muted)';
+    return;
+  }
+  const btn = document.getElementById('clearAllBtn');
+  btn.disabled = true; btn.textContent = '清空中...';
+  try {
+    const rows = await readAllRows();
+    const map = colIndexMap(rows[0]);
+    const ids = rows.slice(1).map(r => r[map['_recordId']]).filter(Boolean);
+    if (ids.length === 0) {
+      msg.textContent = '目前沒有任何評鑑紀錄';
+      msg.style.color = 'var(--muted)';
+      return;
+    }
+    await deleteRecords(RESP_TABLE, ids);
+    msg.textContent = `已清空全部 ${ids.length} 筆評鑑紀錄`;
+    msg.style.color = 'var(--green)';
+    loadOverview();
+    loadDoctorCompare();
+    loadFullHistory();
+  } catch (err) {
+    msg.textContent = '清空失敗：' + err.message;
+    msg.style.color = 'var(--red)';
+  } finally {
+    btn.disabled = false; btn.textContent = '清空全部評鑑紀錄';
+  }
+}
+
 async function loadDoctorCompare() {
   const box = document.getElementById('doctorCompareResult');
   box.innerHTML = '<p class="sub">讀取中...</p>';
@@ -1169,8 +1279,9 @@ async function loadFullHistory() {
     if (doctorFilter) all = all.filter(r => r[map['填寫醫師']] === doctorFilter);
     if (all.length === 0) { box.innerHTML = '<p class="sub">這個篩選條件下沒有資料</p>'; return; }
     all.sort((a,b)=> (a[map['月份']] < b[map['月份']] ? 1 : -1));
-    let html = '<div style="overflow-x:auto"><table class="ov"><tr><th style="text-align:left">助理</th><th>月份</th><th>填寫醫師</th><th>填寫時間</th><th>總平均</th><th>櫃台</th><th>醫助</th><th>團隊</th><th>出席</th></tr>';
+    let html = '<div style="overflow-x:auto"><table class="ov"><tr><th style="text-align:left">助理</th><th>月份</th><th>填寫醫師</th><th>填寫時間</th><th>總平均</th><th>櫃台</th><th>醫助</th><th>團隊</th><th>出席</th><th>操作</th></tr>';
     all.forEach(r=>{
+      const rid = r[map['_recordId']];
       html += `<tr>
         <td class="name">${r[map['助理姓名']]}</td>
         <td>${r[map['月份']]}</td>
@@ -1178,6 +1289,7 @@ async function loadFullHistory() {
         <td>${fmtTS(r[map['Timestamp']])}</td>
         <td>${r[map['總平均']]}</td>
         <td>${r[map['櫃台平均']]}</td><td>${r[map['醫助平均']]}</td><td>${r[map['團隊平均']]}</td><td>${r[map['出席平均']]}</td>
+        <td><button class="btn-secondary" style="padding:5px 10px;font-size:11.5px;color:var(--red);border-color:var(--red);" onclick="deleteOneRecord('${rid}')">刪除</button></td>
       </tr>`;
     });
     html += '</table></div>';
@@ -1244,6 +1356,8 @@ document.getElementById('staffSelect').addEventListener('change', checkStatus);
 document.getElementById('overviewRefreshBtn').addEventListener('click', loadOverview);
 document.getElementById('doctorSelect').addEventListener('change', checkDoctorStatus);
 document.getElementById('resetPasscodeBtn').addEventListener('click', handleResetPasscode);
+document.getElementById('clearDoctorBtn').addEventListener('click', handleClearDoctor);
+document.getElementById('clearAllBtn').addEventListener('click', handleClearAll);
 document.getElementById('historyFilterDoctor').addEventListener('change', loadFullHistory);
 document.getElementById('adminAssistantQueryBtn').addEventListener('click', ()=> loadAdminAssistantHistory(document.getElementById('adminAssistantSelect').value));
 
