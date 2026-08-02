@@ -952,6 +952,7 @@ async function loadStaffData(name) {
 
     let html = '<div class="card"><h2>總平均趨勢</h2><div class="chart-box"><canvas id="staffChart"></canvas></div></div>';
     html += '<div class="card"><h2>各構面（最近一次）</h2><div class="chart-box"><canvas id="staffSectionChart"></canvas></div></div>';
+    html += '<div class="card"><h2>與全體助理平均比較</h2><p class="sub" id="staffCompareSub"></p><div class="chart-box"><canvas id="staffCompareChart"></canvas></div></div>';
     html += '<div class="card"><h2>歷史評論與摘要</h2></div>';
     resultDiv.innerHTML = html;
 
@@ -992,6 +993,39 @@ async function loadStaffData(name) {
         data:['櫃台平均','醫助平均','團隊平均','出席平均'].map(k=>parseFloat(latest[map[k]])||0),
         backgroundColor:['#0d9488','#0f766e','#14b8a6','#5eead4'] }] },
       options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ min:0, max:5 } }, plugins:{ legend:{ display:false } } }
+    });
+
+    // 與全體助理平均比較：取「每位助理」最近一次的紀錄，算出全體平均，跟自己最近一次做對照
+    const latestByAssistant = {};
+    rows.slice(1).forEach(r=>{
+      const nm = r[map['助理姓名']];
+      if (!nm || !r[map['月份']]) return;
+      if (!latestByAssistant[nm] || r[map['月份']] > latestByAssistant[nm][map['月份']]) latestByAssistant[nm] = r;
+    });
+    const allLatest = Object.values(latestByAssistant);
+    const peerAvg = (key) => {
+      const vals = allLatest.map(r=>parseFloat(r[map[key]])).filter(v=>!isNaN(v));
+      return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+    };
+    const myTotal = parseFloat(latest[map['總平均']]) || 0;
+    const peerAvgTotal = peerAvg('總平均');
+    const diff = myTotal - peerAvgTotal;
+    const diffText = Math.abs(diff) < 0.05 ? '與全體平均相同' : (diff > 0 ? `高於全體平均 ${diff.toFixed(1)} 分` : `低於全體平均 ${Math.abs(diff).toFixed(1)} 分`);
+    document.getElementById('staffCompareSub').textContent =
+      `你最近一次（${latest[map['月份']]}）總平均 ${myTotal.toFixed(1)} 分，全體助理最近一次平均 ${peerAvgTotal.toFixed(1)} 分（${diffText}，共 ${allLatest.length} 位助理）`;
+
+    const sectionKeys = ['櫃台平均','醫助平均','團隊平均','出席平均'];
+    if (window.__staffCompareChart) window.__staffCompareChart.destroy();
+    window.__staffCompareChart = new Chart(document.getElementById('staffCompareChart'), {
+      type:'bar',
+      data:{
+        labels:['櫃台','醫助','團隊','出席'],
+        datasets:[
+          { label:'你', data: sectionKeys.map(k=>parseFloat(latest[map[k]])||0), backgroundColor:'#1f6b4a' },
+          { label:'全體助理平均', data: sectionKeys.map(k=>peerAvg(k)), backgroundColor:'#b8862f' }
+        ]
+      },
+      options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ min:0, max:5 } }, plugins:{ legend:{ display:true, position:'bottom' } } }
     });
   } catch (err) {
     resultDiv.innerHTML = `<div class="card"><div class="empty-state">讀取失敗：${err.message}</div></div>`;
