@@ -818,6 +818,8 @@ async function loadMyRecords(doctorName) {
     if (mine.length === 0) { box.innerHTML = '<p class="sub">您還沒有填寫過任何評鑑</p>'; return; }
     mine.sort((a,b)=> (a[map['月份']] < b[map['月份']] ? 1 : -1));
     box.innerHTML = '';
+    const d = new Date();
+    const currentYM = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
     mine.forEach(r=>{
       const div = document.createElement('div');
       div.className = 'month-card';
@@ -825,12 +827,20 @@ async function loadMyRecords(doctorName) {
         <div class="mh"><span class="m">${r[map['助理姓名']]} · ${r[map['月份']]}</span><span class="avg">總平均 ${r[map['總平均']]}</span></div>
         <div class="lbl" style="margin-top:2px;">填寫時間：${fmtTS(r[map['Timestamp']])}</div>
       `;
-      const editBtn = document.createElement('button');
-      editBtn.className = 'btn-secondary';
-      editBtn.style.marginTop = '8px';
-      editBtn.textContent = '填錯了？點這裡修改';
-      editBtn.addEventListener('click', ()=> startEditRecord(r[map['_recordId']]));
-      div.appendChild(editBtn);
+      if (r[map['月份']] === currentYM) {
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-secondary';
+        editBtn.style.marginTop = '8px';
+        editBtn.textContent = '填錯了？點這裡修改';
+        editBtn.addEventListener('click', ()=> startEditRecord(r[map['_recordId']]));
+        div.appendChild(editBtn);
+      } else {
+        const lock = document.createElement('p');
+        lock.className = 'lbl';
+        lock.style.cssText = 'margin-top:8px;color:var(--muted);';
+        lock.textContent = '🔒 非本月紀錄，如需修改請洽管理員';
+        div.appendChild(lock);
+      }
       box.appendChild(div);
     });
   } catch (err) {
@@ -846,6 +856,9 @@ async function startEditRecord(recordId) {
     const map = colIndexMap(rows[0]);
     const row = rows.slice(1).find(r => r[map['_recordId']] === recordId);
     if (!row) { alert('找不到這筆紀錄，可能已被刪除，請重新整理再試一次'); return; }
+    const d = new Date();
+    const currentYM = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    if (row[map['月份']] !== currentYM) { alert('只能修改本月的評鑑紀錄，之前的月份如需修改請洽管理員'); return; }
 
     resetForm(false);
     editingRecordId = recordId;
