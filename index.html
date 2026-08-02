@@ -188,6 +188,7 @@
 
       <div class="card result-card" id="resultCard" style="display:none;">
         <h2 id="resultTitle">✅ 已送出</h2>
+        <p class="sub" id="resultTimestamp" style="margin-top:-8px;"></p>
         <div class="avg-grid" id="avgGrid"></div>
         <p class="lbl" style="margin-top:2px;font-size:12.5px;font-weight:700;color:var(--muted);">自動產生的評論摘要</p>
         <div class="summary-text" id="summaryText"></div>
@@ -599,8 +600,9 @@ async function submitEvaluation() {
     const orderedScores = [];
     SECTIONS.forEach(s=> s.items.forEach(it=> orderedScores.push(String(scores[s.key+'_'+it.code]))));
 
+    const submittedAtISO = new Date().toISOString();
     const row = [
-      new Date().toISOString(), month, currentAssistant,
+      submittedAtISO, month, currentAssistant,
       ...orderedScores,
       secAvg['櫃台'].toFixed(2), secAvg['醫助'].toFixed(2), secAvg['團隊'].toFixed(2), secAvg['出席'].toFixed(2), overall.toFixed(2),
       comment, summary, currentDoctor
@@ -612,6 +614,7 @@ async function submitEvaluation() {
     document.getElementById('resultTitle').textContent = wasEdit
       ? `✏️ ${currentAssistant}（${month}）評鑑已更新`
       : `✅ ${currentAssistant}（${month}）評鑑已送出`;
+    document.getElementById('resultTimestamp').textContent = `填寫時間：${fmtTS(submittedAtISO)}`;
     const avgGrid = document.getElementById('avgGrid');
     avgGrid.innerHTML = '';
     [['總平均',overall],['櫃台',secAvg['櫃台']],['醫助',secAvg['醫助']],['團隊',secAvg['團隊']],['出席',secAvg['出席']]].forEach(([l,v])=>{
@@ -740,6 +743,7 @@ async function loadMyRecords(doctorName) {
       div.className = 'month-card';
       div.innerHTML = `
         <div class="mh"><span class="m">${r[map['助理姓名']]} · ${r[map['月份']]}</span><span class="avg">總平均 ${r[map['總平均']]}</span></div>
+        <div class="lbl" style="margin-top:2px;">填寫時間：${fmtTS(r[map['Timestamp']])}</div>
       `;
       const editBtn = document.createElement('button');
       editBtn.className = 'btn-secondary';
@@ -805,6 +809,20 @@ function colIndexMap(header) {
   const map = {};
   if (Array.isArray(header)) header.forEach((h,i)=> map[h]=i);
   return map;
+}
+
+// Formats an ISO timestamp (stored in the "Timestamp" column) into a readable Taiwan-time string.
+function fmtTS(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const parts = new Intl.DateTimeFormat('zh-TW', {
+    timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false
+  }).formatToParts(d);
+  const p = {};
+  parts.forEach(x => { p[x.type] = x.value; });
+  return `${p.year}/${p.month}/${p.day} ${p.hour}:${p.minute}`;
 }
 
 const pwInputStyle = 'padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13.5px;width:150px;';
@@ -917,6 +935,7 @@ async function loadStaffData(name) {
       const summary = r[map['自動摘要']] || '';
       div.innerHTML = `
         <div class="mh"><span class="m">${r[map['月份']]}</span><span class="avg">總平均 ${r[map['總平均']]}</span></div>
+        <div class="lbl" style="margin-top:-4px;margin-bottom:8px;">填寫時間：${fmtTS(r[map['Timestamp']])}</div>
         <div class="lbl">自動摘要</div>
         <div class="summary-text">${summary}</div>
         <div class="lbl">醫師評論</div>
@@ -1106,6 +1125,7 @@ async function loadAdminAssistantHistory(name) {
       const summary = r[map['自動摘要']] || '';
       div.innerHTML = `
         <div class="mh"><span class="m">${r[map['月份']]} · ${r[map['填寫醫師']]||'—'}</span><span class="avg">總平均 ${r[map['總平均']]}</span></div>
+        <div class="lbl" style="margin-top:-4px;margin-bottom:8px;">填寫時間：${fmtTS(r[map['Timestamp']])}</div>
         <div class="lbl">自動摘要</div>
         <div class="summary-text">${summary}</div>
         <div class="lbl">醫師評論</div>
@@ -1149,12 +1169,13 @@ async function loadFullHistory() {
     if (doctorFilter) all = all.filter(r => r[map['填寫醫師']] === doctorFilter);
     if (all.length === 0) { box.innerHTML = '<p class="sub">這個篩選條件下沒有資料</p>'; return; }
     all.sort((a,b)=> (a[map['月份']] < b[map['月份']] ? 1 : -1));
-    let html = '<div style="overflow-x:auto"><table class="ov"><tr><th style="text-align:left">助理</th><th>月份</th><th>填寫醫師</th><th>總平均</th><th>櫃台</th><th>醫助</th><th>團隊</th><th>出席</th></tr>';
+    let html = '<div style="overflow-x:auto"><table class="ov"><tr><th style="text-align:left">助理</th><th>月份</th><th>填寫醫師</th><th>填寫時間</th><th>總平均</th><th>櫃台</th><th>醫助</th><th>團隊</th><th>出席</th></tr>';
     all.forEach(r=>{
       html += `<tr>
         <td class="name">${r[map['助理姓名']]}</td>
         <td>${r[map['月份']]}</td>
         <td>${r[map['填寫醫師']] || ''}</td>
+        <td>${fmtTS(r[map['Timestamp']])}</td>
         <td>${r[map['總平均']]}</td>
         <td>${r[map['櫃台平均']]}</td><td>${r[map['醫助平均']]}</td><td>${r[map['團隊平均']]}</td><td>${r[map['出席平均']]}</td>
       </tr>`;
