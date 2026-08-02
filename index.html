@@ -750,13 +750,14 @@ function lockDoctorForm() {
   resetForm(false); // wipe any in-progress answers so the next doctor starts clean
 }
 
-function unlockDoctorForm(name) {
+async function unlockDoctorForm(name) {
   currentDoctor = name;
   document.getElementById('doctorFormArea').style.display = 'block';
   document.getElementById('doctorAuthArea').innerHTML = `<p class="sub">✅ 已登入：${name}（<a href="#" id="drLogoutLink">切換醫師</a>）</p>`;
   document.getElementById('drLogoutLink').addEventListener('click', (e)=>{ e.preventDefault(); checkDoctorStatus(); });
-  updateSubmitState();
   loadMyRecords(name);
+  // 登入後自動勾選第一位助理，這樣分數會直接帶入、可以馬上開始填寫／送出，不用先手動點一次
+  await selectAssistant(ASSISTANTS[0]);
 }
 
 async function checkDoctorStatus() {
