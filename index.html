@@ -595,7 +595,7 @@ async function prefillLastScores(name) {
     updateProgress();
     if (hint) {
       hint.style.display = 'block';
-      hint.textContent = `以下分數已自動帶入 ${name} 上次（${last[map['月份']]}）的評鑑結果，方便快速填寫 — 如本月表現有變動，請直接點選新的分數即可覆蓋`;
+      hint.innerHTML = `⚠️ 以下為自動帶入「${name}」上一次（${last[map['月份']]}）的評鑑分數，<strong>僅供參考、尚未送出本月資料</strong>。請依照本月實際表現逐題確認，若有不同請直接點選正確的分數即可修改。`;
     }
   } catch (err) {
     console.error('prefill last scores failed', err);
