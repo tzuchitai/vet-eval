@@ -167,6 +167,7 @@
         <div style="height:12px"></div>
         <span class="field-label">評鑑月份</span>
         <input type="month" id="monthInput">
+        <p class="sub" id="prefillHint" style="margin-top:10px;display:none;color:var(--amber);"></p>
       </div>
 
       <div class="card">
@@ -437,13 +438,7 @@ function initAssistantPicker() {
   ASSISTANTS.forEach(name=>{
     const b = document.createElement('button');
     b.className = 'picker-btn'; b.textContent = name; b.dataset.name = name;
-    b.addEventListener('click', ()=>{
-      if (name !== currentAssistant) resetForm(true); // clear previous assistant's answers before switching
-      currentAssistant = name;
-      wrap.querySelectorAll('.picker-btn').forEach(x=>x.classList.remove('selected'));
-      b.classList.add('selected');
-      updateSubmitState();
-    });
+    b.addEventListener('click', ()=> selectAssistant(name));
     wrap.appendChild(b);
   });
   // staff select
@@ -544,7 +539,7 @@ function updateSubmitState() {
   else { hint.textContent = ''; }
 }
 
-function resetForm(keepAssistant) {
+function resetForm(keepAssistant, keepResult) {
   scores = {};
   editingRecordId = null;
   document.getElementById('submitBtn').textContent = '送出評鑑';
@@ -552,12 +547,59 @@ function resetForm(keepAssistant) {
   if (editNotice) editNotice.remove();
   document.querySelectorAll('.score-btn.selected').forEach(b=>b.classList.remove('selected'));
   document.getElementById('doctorComment').value = '';
-  document.getElementById('resultCard').style.display = 'none';
+  if (!keepResult) document.getElementById('resultCard').style.display = 'none';
+  const prefillHint = document.getElementById('prefillHint');
+  if (prefillHint) { prefillHint.style.display = 'none'; prefillHint.textContent = ''; }
   if (!keepAssistant) {
     currentAssistant = null;
     document.querySelectorAll('#assistantPicker .picker-btn').forEach(b=>b.classList.remove('selected'));
   }
   updateProgress();
+}
+
+// Switches the form to a given assistant: clears previous answers (unless re-clicking
+// the same assistant already selected), highlights the picker button, then pre-fills
+// the score buttons with that assistant's most recent past evaluation as a starting
+// point (the doctor can still freely click any button to change a value).
+async function selectAssistant(name, opts) {
+  opts = opts || {};
+  const switching = name !== currentAssistant;
+  if (switching) resetForm(true, opts.keepResult);
+  currentAssistant = name;
+  document.querySelectorAll('#assistantPicker .picker-btn').forEach(b=>{
+    b.classList.toggle('selected', b.dataset.name === name);
+  });
+  updateSubmitState();
+  if (switching) await prefillLastScores(name);
+}
+
+async function prefillLastScores(name) {
+  const hint = document.getElementById('prefillHint');
+  try {
+    const rows = await readAllRows();
+    const map = colIndexMap(rows[0]);
+    const history = rows.slice(1).filter(r => r[map['助理姓名']] === name && r[map['月份']]);
+    if (history.length === 0) return;
+    history.sort((a,b)=> (a[map['月份']] > b[map['月份']] ? 1 : -1));
+    const last = history[history.length - 1];
+    // guard against the doctor switching to someone else before this fetch resolved
+    if (currentAssistant !== name || editingRecordId) return;
+    SECTIONS.forEach(s=> s.items.forEach(it=>{
+      const key = s.key + '_' + it.code;
+      const v = parseInt(last[map[key]], 10);
+      if (!v) return;
+      scores[key] = v;
+      const rowEl = document.querySelector(`.score-row[data-key="${key}"]`);
+      if (rowEl && rowEl.children[v-1]) rowEl.children[v-1].classList.add('selected');
+    }));
+    updateProgress();
+    if (hint) {
+      hint.style.display = 'block';
+      hint.textContent = `以下分數已自動帶入 ${name} 上次（${last[map['月份']]}）的評鑑結果，方便快速填寫 — 如本月表現有變動，請直接點選新的分數即可覆蓋`;
+    }
+  } catch (err) {
+    console.error('prefill last scores failed', err);
+  }
 }
 
 /* ============ SCORING / SUMMARY LOGIC ============ */
@@ -658,6 +700,14 @@ async function submitEvaluation() {
     const editNotice = document.getElementById('editNotice');
     if (editNotice) editNotice.remove();
     loadMyRecords(currentDoctor);
+
+    // 新填寫（非修改舊紀錄）完成後，自動跳到下一位助理，並帶入該助理上次的分數方便繼續填寫
+    if (!wasEdit) {
+      const idx = ASSISTANTS.indexOf(currentAssistant);
+      if (idx > -1 && idx < ASSISTANTS.length - 1) {
+        await selectAssistant(ASSISTANTS[idx + 1], { keepResult: true });
+      }
+    }
   } catch (err) {
     alert('送出失敗，請稍後再試：\n' + err.message);
   } finally {
