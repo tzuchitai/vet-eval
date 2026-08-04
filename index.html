@@ -1292,9 +1292,14 @@ async function loadDoctorCompare() {
       if (d && data[a][d]) { data[a][d].sum += total; data[a][d].count += 1; }
       data[a].__all.sum += total; data[a].__all.count += 1;
     });
+    // 加權平均：戴子綺醫師的分數計 3 倍權重，其他醫師各計 1 倍權重
+    const WEIGHTED_DOCTOR = '戴子綺醫師';
+    const WEIGHTED_DOCTOR_WEIGHT = 3;
+    const doctorWeight = d => (d === WEIGHTED_DOCTOR ? WEIGHTED_DOCTOR_WEIGHT : 1);
+
     let html = '<table class="ov"><tr><th style="text-align:left">助理</th>';
     DOCTORS.forEach(d => { html += `<th>${d.replace('醫師','')}</th>`; });
-    html += '<th>全體平均</th></tr>';
+    html += '<th>全體平均</th><th>加權平均<br><span class="lbl" style="font-weight:400;">（戴醫師×3）</span></th><th>獎金百分比</th></tr>';
     ASSISTANTS.forEach(a=>{
       html += `<tr><td class="name">${a}</td>`;
       DOCTORS.forEach(d=>{
@@ -1302,9 +1307,25 @@ async function loadDoctorCompare() {
         html += `<td>${cell.count ? (cell.sum/cell.count).toFixed(2) : '—'}</td>`;
       });
       const allCell = data[a].__all;
-      html += `<td><b>${allCell.count ? (allCell.sum/allCell.count).toFixed(2) : '—'}</b></td></tr>`;
+      html += `<td><b>${allCell.count ? (allCell.sum/allCell.count).toFixed(2) : '—'}</b></td>`;
+
+      let weightedSum = 0, weightedWeight = 0;
+      DOCTORS.forEach(d=>{
+        const cell = data[a][d];
+        if (!cell.count) return;
+        const avg = cell.sum / cell.count;
+        const w = doctorWeight(d);
+        weightedSum += avg * w;
+        weightedWeight += w;
+      });
+      const weightedAvg = weightedWeight ? weightedSum / weightedWeight : null;
+      // 滿分 5 分對應獎金上限 25%，按比例換算：獎金% = 加權平均 ÷ 5 × 25
+      const bonusPct = weightedAvg !== null ? (weightedAvg / 5 * 25) : null;
+      html += `<td><b>${weightedAvg !== null ? weightedAvg.toFixed(2) : '—'}</b></td>`;
+      html += `<td><b style="color:var(--primary)">${bonusPct !== null ? bonusPct.toFixed(1) + '%' : '—'}</b></td></tr>`;
     });
     html += '</table>';
+    html += '<p class="sub" style="margin-top:10px;">加權平均：戴子綺醫師評分權重 ×3，其他醫師 ×1 計算平均。獎金百分比：加權平均 ÷ 5 × 25%（滿分5分對應獎金上限25%）。</p>';
     box.innerHTML = html;
   } catch (err) {
     box.innerHTML = `<p class="sub" style="color:var(--red)">讀取失敗：${err.message}</p>`;
