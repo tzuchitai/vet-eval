@@ -578,7 +578,8 @@ async function prefillLastScores(name) {
   try {
     const rows = await readAllRows();
     const map = colIndexMap(rows[0]);
-    const history = rows.slice(1).filter(r => r[map['助理姓名']] === name && r[map['月份']]);
+    // 只抓「同一位醫師」自己之前填過這位助理的紀錄，不會帶到其他醫師填的分數
+    const history = rows.slice(1).filter(r => r[map['助理姓名']] === name && r[map['月份']] && r[map['填寫醫師']] === currentDoctor);
     if (history.length === 0) return;
     history.sort((a,b)=> (a[map['月份']] > b[map['月份']] ? 1 : -1));
     const last = history[history.length - 1];
@@ -595,7 +596,7 @@ async function prefillLastScores(name) {
     updateProgress();
     if (hint) {
       hint.style.display = 'block';
-      hint.innerHTML = `⚠️ 以下為自動帶入「${name}」上一次（${last[map['月份']]}）的評鑑分數，<strong>僅供參考、尚未送出本月資料</strong>。請依照本月實際表現逐題確認，若有不同請直接點選正確的分數即可修改。`;
+      hint.innerHTML = `⚠️ 以下為自動帶入您（${currentDoctor}）上一次（${last[map['月份']]}）評鑑「${name}」的分數，<strong>僅供參考、尚未送出本月資料</strong>。請依照本月實際表現逐題確認，若有不同請直接點選正確的分數即可修改。`;
     }
   } catch (err) {
     console.error('prefill last scores failed', err);
