@@ -264,6 +264,11 @@
       <div class="card">
         <h2>各醫師評分比較</h2>
         <p class="sub">每位助理，各醫師平均給的總分，以及全體醫師平均</p>
+        <span class="field-label">獎金總金額（元）</span>
+        <div class="row-flex">
+          <input type="number" id="bonusPoolInput" placeholder="例如 30000" min="0" style="max-width:180px;">
+        </div>
+        <div style="height:10px"></div>
         <div id="doctorCompareResult" style="overflow-x:auto"></div>
       </div>
 
@@ -1314,18 +1319,9 @@ async function loadDoctorCompare() {
     const WEIGHTED_DOCTOR_WEIGHT = 3;
     const doctorWeight = d => (d === WEIGHTED_DOCTOR ? WEIGHTED_DOCTOR_WEIGHT : 1);
 
-    let html = '<table class="ov"><tr><th style="text-align:left">助理</th>';
-    DOCTORS.forEach(d => { html += `<th>${d.replace('醫師','')}</th>`; });
-    html += '<th>全體平均</th><th>加權平均<br><span class="lbl" style="font-weight:400;">（戴醫師×3）</span></th><th>獎金百分比</th></tr>';
+    // 先算出每位助理的加權平均，才能算出「全部助理的獎金比例加總剛好 100%」
+    const weightedByAssistant = {};
     ASSISTANTS.forEach(a=>{
-      html += `<tr><td class="name">${a}</td>`;
-      DOCTORS.forEach(d=>{
-        const cell = data[a][d];
-        html += `<td>${cell.count ? (cell.sum/cell.count).toFixed(2) : '—'}</td>`;
-      });
-      const allCell = data[a].__all;
-      html += `<td><b>${allCell.count ? (allCell.sum/allCell.count).toFixed(2) : '—'}</b></td>`;
-
       let weightedSum = 0, weightedWeight = 0;
       DOCTORS.forEach(d=>{
         const cell = data[a][d];
@@ -1335,18 +1331,48 @@ async function loadDoctorCompare() {
         weightedSum += avg * w;
         weightedWeight += w;
       });
-      const weightedAvg = weightedWeight ? weightedSum / weightedWeight : null;
-      // 滿分 5 分對應獎金上限 25%，按比例換算：獎金% = 加權平均 ÷ 5 × 25
-      const bonusPct = weightedAvg !== null ? (weightedAvg / 5 * 25) : null;
+      weightedByAssistant[a] = weightedWeight ? weightedSum / weightedWeight : null;
+    });
+    const weightedTotalSum = Object.values(weightedByAssistant).reduce((s,v)=> s + (v || 0), 0);
+
+    let html = '<table class="ov"><tr><th style="text-align:left">助理</th>';
+    DOCTORS.forEach(d => { html += `<th>${d.replace('醫師','')}</th>`; });
+    html += '<th>全體平均</th><th>加權平均<br><span class="lbl" style="font-weight:400;">（戴醫師×3）</span></th><th>獎金比例<br><span class="lbl" style="font-weight:400;">（全部加總100%）</span></th><th>獎金金額</th></tr>';
+    ASSISTANTS.forEach(a=>{
+      html += `<tr><td class="name">${a}</td>`;
+      DOCTORS.forEach(d=>{
+        const cell = data[a][d];
+        html += `<td>${cell.count ? (cell.sum/cell.count).toFixed(2) : '—'}</td>`;
+      });
+      const allCell = data[a].__all;
+      html += `<td><b>${allCell.count ? (allCell.sum/allCell.count).toFixed(2) : '—'}</b></td>`;
+
+      const weightedAvg = weightedByAssistant[a];
+      // 獎金比例：這位助理的加權平均 ÷ 全體助理加權平均總和，讓所有助理的比例加總正好 100%
+      const pct = (weightedAvg !== null && weightedTotalSum > 0) ? (weightedAvg / weightedTotalSum * 100) : null;
       html += `<td><b>${weightedAvg !== null ? weightedAvg.toFixed(2) : '—'}</b></td>`;
-      html += `<td><b style="color:var(--primary)">${bonusPct !== null ? bonusPct.toFixed(1) + '%' : '—'}</b></td></tr>`;
+      html += `<td><b style="color:var(--primary)">${pct !== null ? pct.toFixed(1) + '%' : '—'}</b></td>`;
+      html += `<td class="bonus-amount-cell" data-pct="${pct !== null ? pct : 0}">—</td></tr>`;
     });
     html += '</table>';
-    html += '<p class="sub" style="margin-top:10px;">加權平均：戴子綺醫師評分權重 ×3，其他醫師 ×1 計算平均。獎金百分比：加權平均 ÷ 5 × 25%（滿分5分對應獎金上限25%）。</p>';
+    html += '<p class="sub" style="margin-top:10px;">加權平均：戴子綺醫師評分權重 ×3，其他醫師 ×1 計算平均。獎金比例：每位助理的加權平均 ÷ 全體助理加權平均總和，因此全部助理的比例加起來正好 100%。獎金金額：在上方輸入獎金總金額後，依各自比例自動分配。</p>';
     box.innerHTML = html;
+    updateBonusAmounts();
   } catch (err) {
     box.innerHTML = `<p class="sub" style="color:var(--red)">讀取失敗：${err.message}</p>`;
   }
+}
+
+// 依「獎金總金額」輸入框的值，把每位助理的獎金比例換算成實際金額，即時更新（不需要重新讀取資料）
+function updateBonusAmounts() {
+  const poolInput = document.getElementById('bonusPoolInput');
+  const pool = poolInput ? parseFloat(poolInput.value) : NaN;
+  document.querySelectorAll('.bonus-amount-cell').forEach(cell=>{
+    const pct = parseFloat(cell.dataset.pct) || 0;
+    if (!pool || isNaN(pool) || pool <= 0) { cell.textContent = '—'; return; }
+    const amount = Math.round(pool * pct / 100);
+    cell.textContent = 'NT$ ' + amount.toLocaleString();
+  });
 }
 
 let chartAdminAssistant = null, chartAdminAssistantSection = null;
@@ -1497,6 +1523,7 @@ document.getElementById('clearDoctorBtn').addEventListener('click', handleClearD
 document.getElementById('clearAllBtn').addEventListener('click', handleClearAll);
 document.getElementById('historyFilterDoctor').addEventListener('change', loadFullHistory);
 document.getElementById('adminAssistantQueryBtn').addEventListener('click', ()=> loadAdminAssistantHistory(document.getElementById('adminAssistantSelect').value));
+document.getElementById('bonusPoolInput').addEventListener('input', updateBonusAmounts);
 
 initTabs();
 initAssistantPicker();
