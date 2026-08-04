@@ -264,6 +264,11 @@
       <div class="card">
         <h2>各醫師評分比較</h2>
         <p class="sub">每位助理，各醫師平均給的總分，以及全體醫師平均</p>
+        <span class="field-label">計算月份</span>
+        <div class="row-flex">
+          <select id="doctorCompareMonthSelect"><option value="">全部月份（歷史平均）</option></select>
+        </div>
+        <div style="height:10px"></div>
         <span class="field-label">獎金總金額（元）</span>
         <div class="row-flex">
           <input type="number" id="bonusPoolInput" placeholder="例如 30000" min="0" style="max-width:180px;">
@@ -1331,7 +1336,18 @@ async function loadDoctorCompare() {
     const rows = await readAllRows();
     if (rows.length < 2) { box.innerHTML = '<p class="sub">目前尚無任何評鑑資料</p>'; return; }
     const map = colIndexMap(rows[0]);
-    const all = rows.slice(1).filter(r => r[map['助理姓名']]);
+    let all = rows.slice(1).filter(r => r[map['助理姓名']]);
+
+    // 月份下拉選單：依實際存在的月份重建選項，並盡量保留使用者目前選的月份
+    const monthSel = document.getElementById('doctorCompareMonthSelect');
+    const months = Array.from(new Set(all.map(r=>r[map['月份']]).filter(Boolean))).sort().reverse();
+    const prevValue = monthSel.value;
+    monthSel.innerHTML = '<option value="">全部月份（歷史平均）</option>' + months.map(m=>`<option value="${m}">${m}</option>`).join('');
+    monthSel.value = months.includes(prevValue) ? prevValue : '';
+
+    const monthFilter = monthSel.value;
+    if (monthFilter) all = all.filter(r => r[map['月份']] === monthFilter);
+
     const data = {};
     ASSISTANTS.forEach(a=>{ data[a] = { __all: { sum:0, count:0 } }; DOCTORS.forEach(d=> data[a][d] = { sum:0, count:0 }); });
     all.forEach(r=>{
@@ -1383,7 +1399,7 @@ async function loadDoctorCompare() {
       html += `<td class="bonus-amount-cell" data-pct="${pct !== null ? pct : 0}">—</td></tr>`;
     });
     html += '</table>';
-    html += '<p class="sub" style="margin-top:10px;">加權平均：戴子綺醫師評分權重 ×3，其他醫師 ×1 計算平均。獎金比例：每位助理的加權平均 ÷ 全體助理加權平均總和，因此全部助理的比例加起來正好 100%。獎金金額：在上方輸入獎金總金額後，依各自比例自動分配。</p>';
+    html += `<p class="sub" style="margin-top:10px;">目前計算範圍：<b>${monthFilter || '全部月份（歷史平均）'}</b>。加權平均：戴子綺醫師評分權重 ×3，其他醫師 ×1 計算平均。獎金比例：每位助理的加權平均 ÷ 全體助理加權平均總和，因此全部助理的比例加起來正好 100%。獎金金額：在上方輸入獎金總金額後，依各自比例自動分配。</p>`;
     box.innerHTML = html;
     updateBonusAmounts();
   } catch (err) {
@@ -1552,6 +1568,7 @@ document.getElementById('clearAllBtn').addEventListener('click', handleClearAll)
 document.getElementById('historyFilterDoctor').addEventListener('change', loadFullHistory);
 document.getElementById('adminAssistantQueryBtn').addEventListener('click', ()=> loadAdminAssistantHistory(document.getElementById('adminAssistantSelect').value));
 document.getElementById('bonusPoolInput').addEventListener('input', updateBonusAmounts);
+document.getElementById('doctorCompareMonthSelect').addEventListener('change', loadDoctorCompare);
 
 initTabs();
 initAssistantPicker();
