@@ -630,7 +630,8 @@ function attendanceComment(avg, name) {
   return `本月出勤狀況明顯需要改善，建議與${name}討論原因並提出改善計畫`;
 }
 
-function buildSummary(name, month, secAvg, overall) {
+function buildSummary(name, month, secAvg, overall, itemScores) {
+  itemScores = itemScores || scores; // 預設用醫師填寫當下的 scores，也可以傳入其他分數（例如多位醫師平均後的分數）來重新產生摘要
   let maxKey = '櫃台', minKey = '櫃台';
   ['醫助','團隊','櫃台'].forEach(k=>{
     if (secAvg[k] > secAvg[maxKey]) maxKey = k;
@@ -642,7 +643,7 @@ function buildSummary(name, month, secAvg, overall) {
   SECTIONS.forEach(s=>{
     if (s.key==='出席') return;
     s.items.forEach(it=>{
-      const v = scores[s.key+'_'+it.code];
+      const v = itemScores[s.key+'_'+it.code];
       if (v > topScore) { topScore = v; topItem = it.label.replace(/^\d+\.\s*/,''); }
       if (v < lowScore) { lowScore = v; lowItem = it.label.replace(/^\d+\.\s*/,''); }
     });
@@ -1034,7 +1035,22 @@ async function loadStaffData(name) {
       ['櫃台平均','醫助平均','團隊平均','出席平均'].forEach(k=> sec[k] = avgNum(recs.map(r=>parseFloat(r[map[k]]))));
       const total = avgNum(recs.map(r=>parseFloat(r[map['總平均']])));
       const latestTs = recs.reduce((max,r)=>{ const t = r[map['Timestamp']]; return (!max || (t && t > max)) ? t : max; }, null);
-      return { month:m, total, sec, latestTs, recs };
+
+      // 把每個單項題目的分數，跨所有填過這個月的醫師取平均，才能重新產生「一份」綜合摘要
+      const itemScores = {};
+      SECTIONS.forEach(s=> s.items.forEach(it=>{
+        const key = s.key + '_' + it.code;
+        itemScores[key] = avgNum(recs.map(r=>parseFloat(r[map[key]])));
+      }));
+      const secAvgFromItems = {};
+      SECTIONS.forEach(s=>{ secAvgFromItems[s.key] = avgNum(s.items.map(it=>itemScores[s.key+'_'+it.code])); });
+      const overallFromItems = avgNum(['櫃台','醫助','團隊','出席'].map(k=>secAvgFromItems[k]));
+      const summary = buildSummary(name, m, secAvgFromItems, overallFromItems, itemScores);
+
+      // 醫師評論單純合併文字（跳過沒有留言的紀錄），不重新生成
+      const comments = recs.map(r=>r[map['醫師評論']]).filter(Boolean);
+
+      return { month:m, total, sec, latestTs, recs, summary, comments };
     });
 
     let html = '<div class="card"><h2>總平均趨勢</h2><div class="chart-box"><canvas id="staffChart"></canvas></div></div>';
@@ -1043,22 +1059,34 @@ async function loadStaffData(name) {
     html += '<div class="card"><h2>歷史評論與摘要</h2></div>';
     resultDiv.innerHTML = html;
 
-    // history cards (reverse chronological), one per month, appended after the header card
-    [...combined].reverse().forEach(c=>{
-      const div = document.createElement('div');
-      div.className = 'card month-card';
-      const parts = c.recs.map(r=>{
-        const summary = r[map['自動摘要']] || '';
-        const comment = r[map['醫師評論']];
-        return `${summary}${comment ? `<br>醫師評論：${comment}` : ''}`;
-      }).join('<hr style="margin:10px 0;border:none;border-top:1px solid var(--border);">');
-      div.innerHTML = `
-        <div class="mh"><span class="m">${c.month}</span><span class="avg">總平均 ${c.total.toFixed(2)}</span></div>
-        <div class="lbl" style="margin-top:-4px;margin-bottom:8px;">最後更新時間：${fmtTS(c.latestTs)}</div>
-        <div class="lbl">綜合意見</div>
-        <div class="summary-text">${parts}</div>
-      `;
-      resultDiv.appendChild(div);
+    // history cards, grouped by year then reverse-chronological by month within each year
+    const byYear = {};
+    combined.forEach(c=>{
+      const year = c.month.split('-')[0];
+      (byYear[year] = byYear[year] || []).push(c);
+    });
+    Object.keys(byYear).sort((a,b)=> b.localeCompare(a)).forEach(year=>{
+      const yearHeader = document.createElement('div');
+      yearHeader.className = 'lbl';
+      yearHeader.style.cssText = 'margin:18px 4px 6px;font-size:15px;font-weight:700;color:var(--gold-dark);';
+      yearHeader.textContent = `${year} 年`;
+      resultDiv.appendChild(yearHeader);
+
+      [...byYear[year]].reverse().forEach(c=>{
+        const div = document.createElement('div');
+        div.className = 'card month-card';
+        const commentBlock = c.comments.length
+          ? `<div class="lbl" style="margin-top:10px;">醫師評論</div><div class="summary-text">${c.comments.join('<hr style="margin:8px 0;border:none;border-top:1px solid var(--border);">')}</div>`
+          : '';
+        div.innerHTML = `
+          <div class="mh"><span class="m">${c.month}</span><span class="avg">總平均 ${c.total.toFixed(2)}</span></div>
+          <div class="lbl" style="margin-top:-4px;margin-bottom:8px;">最後更新時間：${fmtTS(c.latestTs)}（共 ${c.recs.length} 位醫師評鑑）</div>
+          <div class="lbl">綜合意見</div>
+          <div class="summary-text">${c.summary}</div>
+          ${commentBlock}
+        `;
+        resultDiv.appendChild(div);
+      });
     });
 
     // charts
