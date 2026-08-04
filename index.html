@@ -1015,33 +1015,50 @@ async function loadStaffData(name) {
     }
     mine.sort((a,b)=> (a[map['月份']] > b[map['月份']] ? 1 : -1));
 
+    // 助理只看到「每個月一筆」的總結，不分醫師：同一個月若有多位醫師填過，
+    // 分數取平均、評論與摘要合併呈現在同一張卡片裡
+    const avgNum = arr => { const v = arr.filter(x=>!isNaN(x)); return v.length ? v.reduce((a,b)=>a+b,0)/v.length : 0; };
+    const byMonth = {};
+    mine.forEach(r=>{
+      const m = r[map['月份']];
+      (byMonth[m] = byMonth[m] || []).push(r);
+    });
+    const combined = Object.keys(byMonth).sort().map(m=>{
+      const recs = byMonth[m];
+      const sec = {};
+      ['櫃台平均','醫助平均','團隊平均','出席平均'].forEach(k=> sec[k] = avgNum(recs.map(r=>parseFloat(r[map[k]]))));
+      const total = avgNum(recs.map(r=>parseFloat(r[map['總平均']])));
+      const latestTs = recs.reduce((max,r)=>{ const t = r[map['Timestamp']]; return (!max || (t && t > max)) ? t : max; }, null);
+      return { month:m, total, sec, latestTs, recs };
+    });
+
     let html = '<div class="card"><h2>總平均趨勢</h2><div class="chart-box"><canvas id="staffChart"></canvas></div></div>';
     html += '<div class="card"><h2>各構面（最近一次）</h2><div class="chart-box"><canvas id="staffSectionChart"></canvas></div></div>';
     html += '<div class="card"><h2>與全體助理平均比較</h2><p class="sub" id="staffCompareSub"></p><div class="chart-box"><canvas id="staffCompareChart"></canvas></div></div>';
     html += '<div class="card"><h2>歷史評論與摘要</h2></div>';
     resultDiv.innerHTML = html;
 
-    // history cards (reverse chronological), appended after the header card
-    const histCard = resultDiv.lastElementChild;
-    [...mine].reverse().forEach(r=>{
+    // history cards (reverse chronological), one per month, appended after the header card
+    [...combined].reverse().forEach(c=>{
       const div = document.createElement('div');
       div.className = 'card month-card';
-      const comment = r[map['醫師評論']] || '（醫師本月未填寫額外評論）';
-      const summary = r[map['自動摘要']] || '';
+      const parts = c.recs.map(r=>{
+        const summary = r[map['自動摘要']] || '';
+        const comment = r[map['醫師評論']];
+        return `${summary}${comment ? `<br>醫師評論：${comment}` : ''}`;
+      }).join('<hr style="margin:10px 0;border:none;border-top:1px solid var(--border);">');
       div.innerHTML = `
-        <div class="mh"><span class="m">${r[map['月份']]}</span><span class="avg">總平均 ${r[map['總平均']]}</span></div>
-        <div class="lbl" style="margin-top:-4px;margin-bottom:8px;">填寫時間：${fmtTS(r[map['Timestamp']])}</div>
-        <div class="lbl">自動摘要</div>
-        <div class="summary-text">${summary}</div>
-        <div class="lbl">醫師評論</div>
-        <div class="summary-text">${comment}</div>
+        <div class="mh"><span class="m">${c.month}</span><span class="avg">總平均 ${c.total.toFixed(2)}</span></div>
+        <div class="lbl" style="margin-top:-4px;margin-bottom:8px;">最後更新時間：${fmtTS(c.latestTs)}</div>
+        <div class="lbl">綜合意見</div>
+        <div class="summary-text">${parts}</div>
       `;
       resultDiv.appendChild(div);
     });
 
     // charts
-    const labels = mine.map(r=>r[map['月份']]);
-    const totals = mine.map(r=>parseFloat(r[map['總平均']])||0);
+    const labels = combined.map(c=>c.month);
+    const totals = combined.map(c=>c.total);
     if (chartStaff) chartStaff.destroy();
     chartStaff = new Chart(document.getElementById('staffChart'), {
       type:'line',
@@ -1049,13 +1066,13 @@ async function loadStaffData(name) {
       options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ min:0, max:5 } }, plugins:{ legend:{ display:false } } }
     });
 
-    const latest = mine[mine.length-1];
+    const latest = combined[combined.length-1];
     if (chartOverview) { /* no-op, separate instance below */ }
     if (window.__staffSectionChart) window.__staffSectionChart.destroy();
     window.__staffSectionChart = new Chart(document.getElementById('staffSectionChart'), {
       type:'bar',
-      data:{ labels:['櫃台','醫助','團隊','出席'], datasets:[{ label:latest[map['月份']],
-        data:['櫃台平均','醫助平均','團隊平均','出席平均'].map(k=>parseFloat(latest[map[k]])||0),
+      data:{ labels:['櫃台','醫助','團隊','出席'], datasets:[{ label:latest.month,
+        data:['櫃台平均','醫助平均','團隊平均','出席平均'].map(k=>latest.sec[k]||0),
         backgroundColor:['#0d9488','#0f766e','#14b8a6','#5eead4'] }] },
       options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ min:0, max:5 } }, plugins:{ legend:{ display:false } } }
     });
@@ -1072,12 +1089,12 @@ async function loadStaffData(name) {
       const vals = allLatest.map(r=>parseFloat(r[map[key]])).filter(v=>!isNaN(v));
       return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
     };
-    const myTotal = parseFloat(latest[map['總平均']]) || 0;
+    const myTotal = latest.total || 0;
     const peerAvgTotal = peerAvg('總平均');
     const diff = myTotal - peerAvgTotal;
     const diffText = Math.abs(diff) < 0.05 ? '與全體平均相同' : (diff > 0 ? `高於全體平均 ${diff.toFixed(1)} 分` : `低於全體平均 ${Math.abs(diff).toFixed(1)} 分`);
     document.getElementById('staffCompareSub').textContent =
-      `你最近一次（${latest[map['月份']]}）總平均 ${myTotal.toFixed(1)} 分，全體助理最近一次平均 ${peerAvgTotal.toFixed(1)} 分（${diffText}，共 ${allLatest.length} 位助理）`;
+      `你最近一次（${latest.month}）總平均 ${myTotal.toFixed(1)} 分，全體助理最近一次平均 ${peerAvgTotal.toFixed(1)} 分（${diffText}，共 ${allLatest.length} 位助理）`;
 
     const sectionKeys = ['櫃台平均','醫助平均','團隊平均','出席平均'];
     if (window.__staffCompareChart) window.__staffCompareChart.destroy();
@@ -1086,7 +1103,7 @@ async function loadStaffData(name) {
       data:{
         labels:['櫃台','醫助','團隊','出席'],
         datasets:[
-          { label:'你', data: sectionKeys.map(k=>parseFloat(latest[map[k]])||0), backgroundColor:'#1f6b4a' },
+          { label:'你', data: sectionKeys.map(k=>latest.sec[k]||0), backgroundColor:'#1f6b4a' },
           { label:'全體助理平均', data: sectionKeys.map(k=>peerAvg(k)), backgroundColor:'#b8862f' }
         ]
       },
