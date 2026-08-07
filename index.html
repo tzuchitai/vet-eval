@@ -301,8 +301,13 @@
 
   <!-- ===================== INTERVIEW SCORING TAB ===================== -->
   <section id="panel-interview" class="panel">
-    <div class="card" style="padding:0; overflow:hidden;">
-      <iframe src="interview.html" title="甄選面談評分表產生器"
+    <div class="card" id="interviewGate">
+      <h2>管理員登入</h2>
+      <p class="sub">此功能僅限管理員使用，通行碼與「管理員」分頁共用</p>
+      <div id="interviewAuthArea"></div>
+    </div>
+    <div class="card" id="interviewFrameWrap" style="display:none; padding:0; overflow:hidden;">
+      <iframe id="interviewFrame" title="甄選面談評分表產生器"
         style="width:100%; height:80vh; border:none; display:block; border-radius:18px;"></iframe>
     </div>
   </section>
@@ -448,6 +453,10 @@ function initTabs() {
       btn.classList.add('active');
       document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
       if (btn.dataset.tab === 'overview' && !currentAdmin) checkAdminStatus();
+      if (btn.dataset.tab === 'interview') {
+        if (currentAdmin) unlockInterviewTab();
+        else checkAdminStatus('interviewAuthArea');
+      }
     });
   });
 }
@@ -1162,29 +1171,30 @@ async function loadStaffData(name) {
 }
 
 /* ============ ADMIN LOGIN ============ */
-function renderAdminAuthArea(mode, extraMsg) {
-  const area = document.getElementById('adminAuthArea');
+function renderAdminAuthArea(mode, extraMsg, areaId) {
+  areaId = areaId || 'adminAuthArea';
+  const area = document.getElementById(areaId);
   if (mode === 'loading') { area.innerHTML = '<p class="sub">確認中...</p>'; return; }
   if (mode === 'setup') {
     area.innerHTML = `
       <p class="sub">這是第一次使用管理員頁面，請自己設定一組通行碼（至少4碼）。</p>
       <div class="row-flex">
-        <input type="password" id="adPcNew" placeholder="設定通行碼" inputmode="numeric" style="${pwInputStyle}">
-        <input type="password" id="adPcConfirm" placeholder="再輸入一次" inputmode="numeric" style="${pwInputStyle}">
-        <button class="btn-secondary" id="adPcSetupBtn">設定並登入</button>
+        <input type="password" id="adPcNew_${areaId}" placeholder="設定通行碼" inputmode="numeric" style="${pwInputStyle}">
+        <input type="password" id="adPcConfirm_${areaId}" placeholder="再輸入一次" inputmode="numeric" style="${pwInputStyle}">
+        <button class="btn-secondary" id="adPcSetupBtn_${areaId}">設定並登入</button>
       </div>
       ${extraMsg ? `<p class="sub" style="color:var(--red);margin-top:6px;">${extraMsg}</p>` : ''}
     `;
-    document.getElementById('adPcSetupBtn').addEventListener('click', doAdminSetup);
+    document.getElementById(`adPcSetupBtn_${areaId}`).addEventListener('click', ()=>doAdminSetup(areaId));
   } else {
     area.innerHTML = `
       <div class="row-flex">
-        <input type="password" id="adPcLogin" placeholder="輸入通行碼" inputmode="numeric" style="${pwInputStyle}">
-        <button class="btn-secondary" id="adPcLoginBtn">登入</button>
+        <input type="password" id="adPcLogin_${areaId}" placeholder="輸入通行碼" inputmode="numeric" style="${pwInputStyle}">
+        <button class="btn-secondary" id="adPcLoginBtn_${areaId}">登入</button>
       </div>
       ${extraMsg ? `<p class="sub" style="color:var(--red);margin-top:6px;">${extraMsg}</p>` : ''}
     `;
-    document.getElementById('adPcLoginBtn').addEventListener('click', doAdminLogin);
+    document.getElementById(`adPcLoginBtn_${areaId}`).addEventListener('click', ()=>doAdminLogin(areaId));
   }
 }
 
@@ -1195,48 +1205,62 @@ function unlockAdmin() {
   loadOverview();
   loadDoctorCompare();
   loadFullHistory();
+  unlockInterviewTab();
 }
 
-async function checkAdminStatus() {
-  renderAdminAuthArea('loading');
+function unlockInterviewTab() {
+  const gate = document.getElementById('interviewGate');
+  const frameWrap = document.getElementById('interviewFrameWrap');
+  if (!gate || !frameWrap) return;
+  gate.style.display = 'none';
+  frameWrap.style.display = 'block';
+  const iframe = document.getElementById('interviewFrame');
+  if (iframe && !iframe.src) iframe.src = 'interview.html';
+}
+
+async function checkAdminStatus(areaId) {
+  areaId = areaId || 'adminAuthArea';
+  renderAdminAuthArea('loading', null, areaId);
   try {
     const info = await getPasscodeInfo(ADMIN_NAME);
-    renderAdminAuthArea(info.code ? 'login' : 'setup');
+    renderAdminAuthArea(info.code ? 'login' : 'setup', null, areaId);
   } catch (err) {
-    document.getElementById('adminAuthArea').innerHTML =
+    document.getElementById(areaId).innerHTML =
       `<p class="sub" style="color:var(--red)">讀取通行碼設定失敗：${err.message}</p>
-       <button class="btn-secondary" id="adRetryBtn">重試</button>`;
-    document.getElementById('adRetryBtn').addEventListener('click', checkAdminStatus);
+       <button class="btn-secondary" id="adRetryBtn_${areaId}">重試</button>`;
+    document.getElementById(`adRetryBtn_${areaId}`).addEventListener('click', ()=>checkAdminStatus(areaId));
   }
 }
 
-async function doAdminSetup() {
-  const pw1 = document.getElementById('adPcNew').value.trim();
-  const pw2 = document.getElementById('adPcConfirm').value.trim();
-  if (pw1.length < 4) { renderAdminAuthArea('setup', '通行碼至少需要4碼'); return; }
-  if (pw1 !== pw2) { renderAdminAuthArea('setup', '兩次輸入的通行碼不一致，請重新輸入'); return; }
-  const btn = document.getElementById('adPcSetupBtn');
+async function doAdminSetup(areaId) {
+  areaId = areaId || 'adminAuthArea';
+  const pw1 = document.getElementById(`adPcNew_${areaId}`).value.trim();
+  const pw2 = document.getElementById(`adPcConfirm_${areaId}`).value.trim();
+  if (pw1.length < 4) { renderAdminAuthArea('setup', '通行碼至少需要4碼', areaId); return; }
+  if (pw1 !== pw2) { renderAdminAuthArea('setup', '兩次輸入的通行碼不一致，請重新輸入', areaId); return; }
+  const btn = document.getElementById(`adPcSetupBtn_${areaId}`);
   btn.disabled = true; btn.textContent = '設定中...';
   try {
     const info = await getPasscodeInfo(ADMIN_NAME);
-    if (info.code) { renderAdminAuthArea('login', '已經有人設定過管理員通行碼了，請直接登入'); return; }
+    if (info.code) { renderAdminAuthArea('login', '已經有人設定過管理員通行碼了，請直接登入', areaId); return; }
     await setPasscode(ADMIN_NAME, pw1);
     unlockAdmin();
   } catch (err) {
-    renderAdminAuthArea('setup', '設定失敗：' + err.message);
+    renderAdminAuthArea('setup', '設定失敗：' + err.message, areaId);
   }
 }
 
-async function doAdminLogin() {
-  const pw = document.getElementById('adPcLogin').value.trim();
-  const btn = document.getElementById('adPcLoginBtn');
+async function doAdminLogin(areaId) {
+  areaId = areaId || 'adminAuthArea';
+  const pw = document.getElementById(`adPcLogin_${areaId}`).value.trim();
+  const btn = document.getElementById(`adPcLoginBtn_${areaId}`);
   btn.disabled = true; btn.textContent = '登入中...';
   try {
     const info = await getPasscodeInfo(ADMIN_NAME);
-    if (!info.code || info.code !== pw) { renderAdminAuthArea('login', '通行碼錯誤，請再試一次'); return; }
+    if (!info.code || info.code !== pw) { renderAdminAuthArea('login', '通行碼錯誤，請再試一次', areaId); return; }
     unlockAdmin();
   } catch (err) {
-    renderAdminAuthArea('login', '登入失敗：' + err.message);
+    renderAdminAuthArea('login', '登入失敗：' + err.message, areaId);
   }
 }
 
