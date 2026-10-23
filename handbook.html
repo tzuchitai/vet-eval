@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>聯盟龜山動物醫院・新人工作規範手冊</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800&family=Noto+Serif+TC:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg:#faf7f2; --card:#ffffff; --border:#e8e0d0; --text:#2b2a26; --muted:#8b8375;
+    --primary:#1f6b4a; --primary-dark:#15503a; --primary-light:#e4f0e7;
+    --gold:#b8862f; --gold-dark:#8f6a24; --gold-light:#f6ecd8;
+    --red:#b0453b; --amber:#a9791a; --green:#2f7d4f;
+  }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; scroll-padding-top:16px; }
+  body { margin:0; font-family:"Noto Sans TC",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,"PingFang TC","Microsoft JhengHei",sans-serif;
+    background:radial-gradient(1100px 520px at 50% -8%, #fffdf8 0%, var(--bg) 60%); color:var(--text); font-size:14px; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1120px; margin:0 auto; padding:36px 16px 64px; }
+  header.top { text-align:center; margin-bottom:26px; }
+  .brand-mark { font-size:11px; letter-spacing:.32em; font-weight:700; color:var(--gold); text-transform:uppercase; margin-bottom:12px; }
+  header.top h1 { font-family:"Noto Serif TC",serif; font-size:23px; margin:0 0 9px; font-weight:700; }
+  header.top p { margin:0; color:var(--muted); font-size:12.5px; }
+  header.top::after { content:""; display:block; width:54px; height:2px; margin:18px auto 0; background:linear-gradient(90deg,var(--gold),var(--primary)); }
+  .nav-links { margin-top:10px; font-size:12px; display:flex; gap:16px; justify-content:center; flex-wrap:wrap; }
+  .nav-links a { color:var(--primary); text-decoration:none; }
+  .nav-links a:hover { text-decoration:underline; }
+  .layout { display:grid; grid-template-columns:240px 1fr; gap:22px; align-items:start; }
+  aside.toc { position:sticky; top:16px; max-height:calc(100vh - 32px); overflow:auto; background:var(--card); border:1px solid var(--border); border-radius:18px; padding:16px 14px; }
+  .toc-title { font-size:11px; font-weight:700; color:var(--gold-dark); letter-spacing:.1em; margin:0 6px 8px; }
+  .toc a { display:block; padding:6px 8px; border-radius:8px; color:var(--text); text-decoration:none; font-size:13px; line-height:1.4; }
+  .toc a:hover { background:var(--gold-light); }
+  .toc a.sub { font-size:12px; color:var(--muted); padding-left:22px; }
+  .toc a.special { color:var(--primary); font-weight:600; }
+  .toc .cnt { color:var(--muted); font-size:11px; margin-left:4px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:18px; padding:18px 20px; margin-bottom:16px; box-shadow:0 1px 3px rgba(43,42,38,.04); }
+  .search-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .search { flex:1; min-width:0; padding:10px 14px; border:1.5px solid var(--border); border-radius:11px; font-size:14px; font-family:inherit; color:var(--text); }
+  .search:focus { outline:none; border-color:var(--primary); }
+  .btn { padding:9px 14px; border:1.5px solid var(--gold); background:#fff; color:var(--gold-dark); border-radius:11px; font-weight:700; font-family:inherit; font-size:13px; cursor:pointer; }
+  .btn:hover { background:var(--gold-light); }
+  .hint { color:var(--muted); font-size:12px; margin-top:8px; }
+  h2.ch { font-family:"Noto Serif TC",serif; font-size:19px; margin:30px 0 4px; display:flex; align-items:baseline; gap:10px; }
+  h2.ch .no { color:var(--gold); font-size:15px; min-width:28px; }
+  .ch-intro { color:var(--muted); font-size:12.5px; margin:0 0 12px 38px; }
+  h3.sec { font-size:14.5px; font-weight:700; color:var(--primary-dark); margin:18px 0 8px; padding-left:10px; border-left:3px solid var(--gold); }
+  .rule { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 16px; margin-bottom:10px; }
+  .rule.pending { border-color:#e8cf9a; background:#fffbf1; }
+  .rule-head { display:flex; gap:8px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; }
+  .rule h4 { margin:0; font-size:15px; font-weight:700; line-height:1.5; flex:1; min-width:200px; }
+  .badges { display:flex; gap:6px; flex-wrap:wrap; }
+  .b { padding:2px 9px; border-radius:999px; font-size:11.5px; font-weight:700; white-space:nowrap; }
+  .b.must { background:var(--primary-light); color:var(--primary-dark); }
+  .b.pend { background:#fbefd6; color:var(--amber); }
+  ol.steps { margin:8px 0 0; padding-left:22px; line-height:1.8; font-size:13.5px; }
+  ol.steps li { padding-left:2px; margin-bottom:2px; }
+  .note { margin-top:8px; font-size:12.5px; color:var(--amber); background:#fdf5e4; border-radius:8px; padding:6px 10px; }
+  .meta { margin-top:10px; display:flex; flex-wrap:wrap; gap:4px 16px; font-size:12px; color:var(--muted); }
+  .meta b { color:var(--text); font-weight:600; }
+  .meta a { color:var(--primary); text-decoration:none; }
+  .meta a:hover { text-decoration:underline; }
+  details.hist { margin-top:8px; font-size:12.5px; }
+  details.hist summary { cursor:pointer; color:var(--gold-dark); font-weight:600; }
+  details.hist ul { margin:6px 0 0; padding-left:18px; color:var(--muted); line-height:1.7; }
+  .must-list { margin:0; padding-left:24px; line-height:1.9; }
+  .must-list a { color:var(--text); text-decoration:none; border-bottom:1px dashed var(--gold); }
+  .must-list a:hover { color:var(--primary); }
+  .must-list .ch-tag { color:var(--muted); font-size:11.5px; margin-left:6px; }
+  .section-title { font-family:"Noto Serif TC",serif; font-size:17px; margin:0 0 4px; }
+  .sub-intro { color:var(--muted); font-size:12.5px; margin:0 0 12px; }
+  .pend-item { border-top:1px dashed var(--border); padding:10px 0; }
+  .pend-item:first-of-type { border-top:none; }
+  .pend-item b { font-size:14px; }
+  .pend-item p { margin:4px 0 0; font-size:13px; line-height:1.7; }
+  .pend-item a { color:var(--primary); font-size:12px; }
+  mark { background:#fbe9b7; padding:0 1px; border-radius:2px; }
+  .hidden { display:none !important; }
+  .empty { text-align:center; color:var(--muted); padding:30px 0; }
+  .flash { animation:flash 2s ease; }
+  @keyframes flash { 0%,40% { box-shadow:0 0 0 3px var(--gold); } 100% { box-shadow:none; } }
+  footer { text-align:center; color:var(--muted); font-size:11.5px; margin-top:30px; line-height:1.7; }
+  @media (max-width:860px) {
+    .layout { grid-template-columns:1fr; }
+    aside.toc { position:static; max-height:none; }
+    .toc details summary { cursor:pointer; font-weight:700; color:var(--gold-dark); font-size:13px; }
+  }
+  @media (max-width:600px) {
+    .wrap { padding:24px 12px 48px; }
+    header.top h1 { font-size:20px; }
+    .card { padding:14px; border-radius:14px; }
+    .rule { padding:13px; }
+    ol.steps { font-size:14px; }
+    .ch-intro { margin-left:0; }
+  }
+  @media print {
+    body { background:#fff; font-size:11.5pt; }
+    .wrap { max-width:none; padding:0; }
+    aside.toc, .search-card, .nav-links, .no-print { display:none !important; }
+    .layout { display:block; }
+    .rule, .card { box-shadow:none; border:1px solid #ccc; break-inside:avoid; }
+    h2.ch { break-before:page; }
+    h2.ch.first { break-before:auto; }
+    h3.sec { break-after:avoid; }
+    .meta a { color:var(--text); }
+    details.hist ul { display:block; }
+    .hidden { display:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand-mark">Alliance Veterinary Hospital</div>
+    <h1>聯盟龜山動物醫院・新人工作規範手冊</h1>
+    <p id="basis">目前有效的院內規則與流程</p>
+    <div class="nav-links"><a href="index.html">← 助理團隊目標達成回顧</a><a href="meetings.html">會議事項（依時間）→</a></div>
+  </header>
+
+  <div class="layout">
+    <aside class="toc" id="toc"><div class="empty">載入中…</div></aside>
+    <main>
+      <div class="card search-card">
+        <div class="search-row">
+          <input class="search" id="q" type="search" placeholder="全文搜尋，例如：管制藥、CAAC、眼科、退款">
+          <button class="btn" onclick="window.print()">列印</button>
+        </div>
+        <div class="hint" id="count"></div>
+      </div>
+      <div id="content"></div>
+    </main>
+  </div>
+  <footer>每條規則附最後更新日期與來源事項連結；同一規則有更新時只顯示最新版，舊版收在「歷史版本」。<br>有疑問請先問資深同仁或在開會討論區提出。</footer>
+</div>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const fmt=d=>esc(d).replace(/-/g,'/');
+  let H=null, meetings={}, ruleIndex={}, q='';
+  function hl(t){ const e=esc(t); if(!q) return e; const r=new RegExp(esc(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'); return e.replace(r,m=>'<mark>'+m+'</mark>'); }
+  function srcLinks(ids){ return ids.map(id=>`<a href="meetings.html#${esc(id)}">${meetings[id]?fmt(meetings[id].date)+' '+esc(meetings[id].title):esc(id)}</a>`).join('、'); }
+  function ruleHTML(r,chNo){
+    const must=H.mustRead.includes(r.id), pend=r.status==='待確認'||(r.conflictWith&&r.conflictWith.length);
+    let h=`<div class="rule${pend?' pending':''}" id="${esc(r.id)}" data-text="${esc([r.title,...r.steps,r.note||'',r.owner||'',...(r.history||[]).map(x=>x.text)].join(' ').toLowerCase())}">
+      <div class="rule-head"><h4>${hl(r.title)}</h4><div class="badges">${must?'<span class="b must">第一週必讀</span>':''}${pend?'<span class="b pend">待確認</span>':''}</div></div>
+      <ol class="steps">${r.steps.map(s=>`<li>${hl(s)}</li>`).join('')}</ol>`;
+    if(r.note) h+=`<div class="note">${hl(r.note)}</div>`;
+    if(r.conflictWith&&r.conflictWith.length) h+=`<div class="note">可能衝突的規定：${srcLinks(r.conflictWith)}</div>`;
+    h+=`<div class="meta"><span>最後更新：<b>${fmt(r.updated)}</b></span>${r.owner?`<span>負責：<b>${hl(r.owner)}</b></span>`:''}<span>來源：${srcLinks(r.sources)}</span></div>`;
+    if(r.history&&r.history.length) h+=`<details class="hist"><summary>歷史版本（${r.history.length}）</summary><ul>${r.history.map(x=>`<li><b>${fmt(x.date)}</b>　${hl(x.text)}</li>`).join('')}</ul></details>`;
+    return h+'</div>';
+  }
+  function render(){
+    let toc='<div class="toc-title">目錄</div><a class="special" href="#must">★ 新人第一週必讀</a><a class="special" href="#pending">⚑ 待確認事項</a>';
+    let html='';
+    // must read
+    html+=`<div class="card" id="must"><h2 class="section-title">★ 新人第一週必讀</h2><p class="sub-intro">到職第一週請先熟悉這 ${H.mustRead.length} 條，點標題可跳到完整規則。</p><ol class="must-list">${H.mustRead.map(id=>{const x=ruleIndex[id];return `<li><a href="#${id}">${esc(x.r.title)}</a><span class="ch-tag">第 ${x.no} 章</span></li>`}).join('')}</ol></div>`;
+    // pending
+    const pend=[];
+    H.chapters.forEach((c,i)=>c.sections.forEach(s=>s.rules.forEach(r=>{ if(r.status==='待確認'||(r.conflictWith&&r.conflictWith.length)) pend.push({title:r.title,note:r.note||'相關會議事項尚未定案，目前暫依此規則執行。',link:'#'+r.id,label:'看規則'}); })));
+    (H.pendingExtra||[]).forEach(p=>pend.push({title:p.title,note:p.note,link:'meetings.html#'+p.meetingId,label:'看會議事項'}));
+    html+=`<div class="card" id="pending"><h2 class="section-title">⚑ 待確認事項</h2><p class="sub-intro">以下事項尚未定案或與其他規定可能衝突，會議確認後會更新。</p>${pend.map(p=>`<div class="pend-item"><b>${esc(p.title)}</b><p>${esc(p.note)} <a href="${esc(p.link)}">${p.label} →</a></p></div>`).join('')}</div>`;
+    let tocBody='';
+    H.chapters.forEach((c,i)=>{
+      const no=i+1, n=c.sections.reduce((a,s)=>a+s.rules.length,0);
+      tocBody+=`<a href="#${c.id}">${no}. ${esc(c.title)}<span class="cnt">${n}</span></a>`+c.sections.map(s=>`<a class="sub" href="#${s.id}">${esc(s.title)}</a>`).join('');
+      html+=`<section class="chapter" id="${c.id}"><h2 class="ch${i===0?' first':''}"><span class="no">${no}.</span>${esc(c.title)}</h2><p class="ch-intro">${esc(c.intro)}</p>`+
+        c.sections.map(s=>`<div class="section" id="${s.id}"><h3 class="sec">${esc(s.title)}</h3>${s.rules.map(r=>ruleHTML(r,no)).join('')}</div>`).join('')+`</section>`;
+    });
+    const mobile=window.matchMedia('(max-width:860px)').matches;
+    $('toc').innerHTML= mobile ? `<details><summary>目錄（點開跳章節）</summary>${toc}${tocBody}</details>` : toc+tocBody;
+    $('content').innerHTML=html+'<div class="empty hidden" id="noresult">沒有符合的規則</div>';
+    filter();
+  }
+  function filter(){
+    q=$('q').value.trim(); const ql=q.toLowerCase(); let shown=0,total=0;
+    document.querySelectorAll('.rule').forEach(el=>{
+      total++; const ok=!ql||el.dataset.text.includes(ql); el.classList.toggle('hidden',!ok); if(ok) shown++;
+      if(ok){ const r=ruleIndex[el.id].r; const tmp=document.createElement('div'); tmp.innerHTML=ruleHTML(r); const n=tmp.firstChild; n.classList.toggle('hidden',false); const open=el.querySelector('details')&&el.querySelector('details').open; el.replaceWith(n); if(open||(ql&&n.querySelector('details mark'))) n.querySelector('details').open=true; }
+    });
+    document.querySelectorAll('.section').forEach(s=>s.classList.toggle('hidden',!s.querySelector('.rule:not(.hidden)')));
+    document.querySelectorAll('.chapter').forEach(s=>s.classList.toggle('hidden',!s.querySelector('.rule:not(.hidden)')));
+    ['must','pending'].forEach(id=>$(id).classList.toggle('hidden',!!ql));
+    $('noresult').classList.toggle('hidden',shown>0);
+    $('count').textContent= ql ? `找到 ${shown} 條規則（共 ${total} 條）` : `共 ${H.chapters.length} 章、${total} 條規則・資料更新：${fmt(H.updated)}`;
+  }
+  function jump(){ const id=decodeURIComponent(location.hash.slice(1)); if(!id) return; const el=document.getElementById(id); if(el){ if(el.classList.contains('hidden')){ $('q').value=''; filter(); } const t=document.getElementById(id); t.scrollIntoView(); if(t.classList.contains('rule')){ t.classList.add('flash'); } } }
+  $('q').addEventListener('input',filter);
+  window.addEventListener('hashchange',jump);
+  window.addEventListener('beforeprint',()=>document.querySelectorAll('details.hist').forEach(d=>d.open=true));
+  Promise.all([fetch('data/handbook.json?t='+Date.now()).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}),
+               fetch('data/meetings.json?t='+Date.now()).then(r=>r.ok?r.json():[]).catch(()=>[])])
+  .then(([h,m])=>{
+    H=h; m.forEach(x=>meetings[x.id]=x);
+    H.chapters.forEach((c,i)=>c.sections.forEach(s=>s.rules.forEach(r=>ruleIndex[r.id]={r,no:i+1})));
+    if(H.basis) $('basis').textContent=H.basis;
+    render(); setTimeout(jump,50);
+  }).catch(e=>{ $('content').innerHTML='<div class="empty">資料載入失敗（'+esc(e.message)+'），請稍後重新整理</div>'; });
+})();
+</script>
+</body>
+</html>

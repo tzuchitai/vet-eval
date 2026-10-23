@@ -58,6 +58,9 @@
   .extra { margin-top:8px; display:flex; flex-wrap:wrap; gap:4px 16px; font-size:12px; color:var(--muted); }
   .extra b { color:var(--text); font-weight:600; }
   mark { background:#fbe9b7; padding:0 1px; border-radius:2px; }
+  .item.flash { animation:flash 2s ease; }
+  @keyframes flash { 0%,40% { box-shadow:0 0 0 3px var(--gold); } 100% { box-shadow:none; } }
+  html { scroll-padding-top:16px; }
   .empty { text-align:center; color:var(--muted); padding:40px 0; }
   footer { text-align:center; color:var(--muted); font-size:11.5px; margin-top:30px; line-height:1.7; }
   @media (max-width:600px) {
@@ -78,7 +81,7 @@
     <div class="brand-mark">Alliance Veterinary Hospital</div>
     <h1>聯盟龜山動物醫院・會議事項</h1>
     <p>院內會議決議、規定與交辦事項彙整</p>
-    <a class="back" href="index.html">← 回到助理團隊目標達成回顧</a>
+    <a class="back" href="index.html">← 回到助理團隊目標達成回顧</a><span style="color:var(--border);margin:0 8px">|</span><a class="back" href="handbook.html">新人工作規範手冊 →</a>
   </header>
 
   <div class="card">
@@ -125,19 +128,25 @@
       const m=d.date.slice(0,7);
       if(m!==last){html+=`<div class="month">${m.replace('-',' 年 ')} 月</div>`;last=m;}
       const sc=stClass(d.status);
-      html+=`<div class="item ${sc}">
+      html+=`<div class="item ${sc}" id="${esc(d.id)}">
         <div class="meta"><span>${esc(d.date)}</span><span class="tag">${esc(d.category)}</span>${d.status?`<span class="st ${sc}">${esc(d.status)}</span>`:''}</div>
         <h3>${hl(d.title,q)}</h3>
         <p>${hl(d.summary,q)}</p>
-        <div class="extra">${d.owner?`<span>負責：<b>${hl(d.owner,q)}</b></span>`:''}${d.deadline?`<span>期限：<b>${esc(d.deadline)}</b></span>`:''}<span>來源：${esc(d.source)}</span></div>
+        <div class="extra">${d.owner?`<span>負責：<b>${hl(d.owner,q)}</b></span>`:''}${d.deadline?`<span>期限：<b>${esc(d.deadline)}</b></span>`:''}<span>來源：${esc(d.source)}</span>${(d.conflictWith||[]).length?`<span>可能衝突：${d.conflictWith.map(c=>`<a href="#${esc(c)}" style="color:var(--primary)">${esc(c)}</a>`).join('、')}</span>`:''}</div>
       </div>`;
     });
     $('list').innerHTML=html;
   }
+  function jump(){
+    const id=decodeURIComponent(location.hash.slice(1)); if(!id||!data.length) return;
+    if(!document.getElementById(id)){ cat=ALL; $('q').value=''; $('todoOnly').checked=false; renderChips(); render(); }
+    const el=document.getElementById(id); if(el){ el.scrollIntoView({block:'start'}); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+  }
+  window.addEventListener('hashchange',jump);
   $('q').addEventListener('input',render);
   $('todoOnly').addEventListener('change',render);
   fetch('data/meetings.json?t='+Date.now()).then(r=>{if(!r.ok)throw new Error(r.status);return r.json();})
-    .then(j=>{data=Array.isArray(j)?j:[];renderChips();render();})
+    .then(j=>{data=Array.isArray(j)?j:[];renderChips();render();setTimeout(jump,30);})
     .catch(e=>{$('list').innerHTML='<div class="empty">資料載入失敗（'+esc(e.message)+'），請稍後重新整理</div>';});
 })();
 </script>
