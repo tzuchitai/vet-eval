@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>聯盟龜山動物醫院・會議事項</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800&family=Noto+Serif+TC:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg:#faf7f2; --card:#ffffff; --border:#e8e0d0; --text:#2b2a26; --muted:#8b8375;
+    --primary:#1f6b4a; --primary-dark:#15503a; --primary-light:#e4f0e7;
+    --gold:#b8862f; --gold-dark:#8f6a24; --gold-light:#f6ecd8;
+    --red:#b0453b; --amber:#a9791a; --green:#2f7d4f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; font-family:"Noto Sans TC",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,"PingFang TC","Microsoft JhengHei",sans-serif;
+    background: radial-gradient(1100px 520px at 50% -8%, #fffdf8 0%, var(--bg) 60%);
+    color:var(--text); font-size:14px; -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width:920px; margin:0 auto; padding:36px 16px 64px; }
+  header.top { text-align:center; margin-bottom:26px; }
+  .brand-mark { font-size:11px; letter-spacing:.32em; font-weight:700; color:var(--gold); text-transform:uppercase; margin-bottom:12px; }
+  header.top h1 { font-family:"Noto Serif TC",serif; font-size:23px; margin:0 0 9px; font-weight:700; letter-spacing:.01em; }
+  header.top p { margin:0; color:var(--muted); font-size:12.5px; letter-spacing:.02em; }
+  header.top::after { content:""; display:block; width:54px; height:2px; margin:18px auto 0; background:linear-gradient(90deg, var(--gold), var(--primary)); }
+  .back { display:inline-block; margin-top:10px; font-size:12px; color:var(--primary); text-decoration:none; }
+  .back:hover { text-decoration:underline; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:18px; padding:18px 20px; margin-bottom:16px; box-shadow:0 1px 3px rgba(43,42,38,.04); }
+  .field-label { font-size:11px; font-weight:700; color:var(--gold-dark); margin-bottom:8px; display:block; letter-spacing:.1em; }
+  .chips { display:flex; flex-wrap:wrap; gap:7px; }
+  .chip { padding:7px 13px; border:1.5px solid var(--border); background:#fff; border-radius:999px; cursor:pointer; font-size:13px; font-weight:600; color:var(--text); font-family:inherit; }
+  .chip:hover { border-color:var(--gold); }
+  .chip.active { border-color:var(--primary); background:linear-gradient(135deg, var(--primary), var(--primary-dark)); color:#fff; box-shadow:0 4px 12px rgba(31,107,74,.22); }
+  .chip .cnt { opacity:.7; font-weight:500; margin-left:3px; }
+  .controls { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-top:14px; }
+  .search { flex:1; min-width:200px; padding:10px 14px; border:1.5px solid var(--border); border-radius:11px; font-size:14px; font-family:inherit; color:var(--text); background:#fff; }
+  .search:focus { outline:none; border-color:var(--primary); }
+  .toggle { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; cursor:pointer; user-select:none; }
+  .toggle input { width:18px; height:18px; accent-color:var(--primary); }
+  .summary-line { color:var(--muted); font-size:12.5px; margin:4px 4px 12px; }
+  .month { font-family:"Noto Serif TC",serif; font-size:14px; font-weight:700; color:var(--gold-dark); margin:22px 4px 10px; letter-spacing:.05em; }
+  .item { background:var(--card); border:1px solid var(--border); border-left:4px solid var(--gold); border-radius:14px; padding:14px 16px; margin-bottom:10px; }
+  .item.todo { border-left-color:var(--amber); }
+  .item.done { border-left-color:var(--muted); }
+  .item.decided { border-left-color:var(--primary); }
+  .meta { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:6px; font-size:12px; color:var(--muted); }
+  .tag { padding:2px 9px; border-radius:999px; font-size:11.5px; font-weight:600; background:var(--gold-light); color:var(--gold-dark); }
+  .st { padding:2px 9px; border-radius:999px; font-size:11.5px; font-weight:700; }
+  .st.decided { background:var(--primary-light); color:var(--primary-dark); }
+  .st.todo { background:#fbefd6; color:var(--amber); }
+  .st.done { background:#efebe3; color:var(--muted); }
+  .item h3 { margin:0 0 6px; font-size:15px; font-weight:700; line-height:1.5; }
+  .item p { margin:0; line-height:1.75; font-size:13.5px; }
+  .extra { margin-top:8px; display:flex; flex-wrap:wrap; gap:4px 16px; font-size:12px; color:var(--muted); }
+  .extra b { color:var(--text); font-weight:600; }
+  mark { background:#fbe9b7; padding:0 1px; border-radius:2px; }
+  .empty { text-align:center; color:var(--muted); padding:40px 0; }
+  footer { text-align:center; color:var(--muted); font-size:11.5px; margin-top:30px; line-height:1.7; }
+  @media (max-width:600px) {
+    .wrap { padding:24px 12px 48px; }
+    header.top h1 { font-size:20px; }
+    .card { padding:14px; border-radius:14px; }
+    .chips { flex-wrap:nowrap; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch; }
+    .chip { white-space:nowrap; }
+    .search { flex:1 1 100%; min-width:0; }
+    .item { padding:13px 13px; }
+    .item p { font-size:14px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand-mark">Alliance Veterinary Hospital</div>
+    <h1>聯盟龜山動物醫院・會議事項</h1>
+    <p>院內會議決議、規定與交辦事項彙整</p>
+    <a class="back" href="index.html">← 回到助理團隊目標達成回顧</a>
+  </header>
+
+  <div class="card">
+    <span class="field-label">類別</span>
+    <div class="chips" id="chips"></div>
+    <div class="controls">
+      <input class="search" id="q" type="search" placeholder="搜尋關鍵字，例如：給藥、CAAC、眼科">
+      <label class="toggle"><input type="checkbox" id="todoOnly">只看待辦</label>
+    </div>
+  </div>
+
+  <div class="summary-line" id="count"></div>
+  <div id="list"><div class="empty">載入中…</div></div>
+
+  <footer>資料來源：院內 LINE 群組與記事本　·　依日期由新到舊排列<br>同一規定若有更新，以最新版本為準並標註變更日期</footer>
+</div>
+<script>
+(function(){
+  const ALL='全部';
+  let data=[], cat=ALL;
+  const $=id=>document.getElementById(id);
+  const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const stClass=s=>s==='待辦'?'todo':(s==='已完成'?'done':'decided');
+  function hl(text,q){
+    const t=esc(text); if(!q) return t;
+    const qq=esc(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    return t.replace(new RegExp(qq,'gi'),m=>'<mark>'+m+'</mark>');
+  }
+  function renderChips(){
+    const counts={}; data.forEach(d=>counts[d.category]=(counts[d.category]||0)+1);
+    const cats=[ALL,...Object.keys(counts).sort((a,b)=>counts[b]-counts[a])];
+    $('chips').innerHTML=cats.map(c=>`<button class="chip${c===cat?' active':''}" data-c="${esc(c)}">${esc(c)}<span class="cnt">${c===ALL?data.length:counts[c]}</span></button>`).join('');
+    $('chips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{cat=b.dataset.c;renderChips();render();});
+  }
+  function render(){
+    const q=$('q').value.trim(); const ql=q.toLowerCase(); const todo=$('todoOnly').checked;
+    const rows=data.filter(d=>(cat===ALL||d.category===cat)&&(!todo||d.status==='待辦')&&
+      (!ql||[d.title,d.summary,d.owner,d.category,d.date,d.deadline].join(' ').toLowerCase().includes(ql)))
+      .sort((a,b)=>b.date.localeCompare(a.date)||a.id.localeCompare(b.id));
+    $('count').textContent=`共 ${rows.length} 筆`+(rows.length!==data.length?`（全部 ${data.length} 筆）`:'');
+    if(!rows.length){$('list').innerHTML='<div class="empty">沒有符合條件的事項</div>';return;}
+    let html='',last='';
+    rows.forEach(d=>{
+      const m=d.date.slice(0,7);
+      if(m!==last){html+=`<div class="month">${m.replace('-',' 年 ')} 月</div>`;last=m;}
+      const sc=stClass(d.status);
+      html+=`<div class="item ${sc}">
+        <div class="meta"><span>${esc(d.date)}</span><span class="tag">${esc(d.category)}</span>${d.status?`<span class="st ${sc}">${esc(d.status)}</span>`:''}</div>
+        <h3>${hl(d.title,q)}</h3>
+        <p>${hl(d.summary,q)}</p>
+        <div class="extra">${d.owner?`<span>負責：<b>${hl(d.owner,q)}</b></span>`:''}${d.deadline?`<span>期限：<b>${esc(d.deadline)}</b></span>`:''}<span>來源：${esc(d.source)}</span></div>
+      </div>`;
+    });
+    $('list').innerHTML=html;
+  }
+  $('q').addEventListener('input',render);
+  $('todoOnly').addEventListener('change',render);
+  fetch('data/meetings.json?t='+Date.now()).then(r=>{if(!r.ok)throw new Error(r.status);return r.json();})
+    .then(j=>{data=Array.isArray(j)?j:[];renderChips();render();})
+    .catch(e=>{$('list').innerHTML='<div class="empty">資料載入失敗（'+esc(e.message)+'），請稍後重新整理</div>';});
+})();
+</script>
+</body>
+</html>
