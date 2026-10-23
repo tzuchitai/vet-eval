@@ -108,6 +108,21 @@
     details.hist ul { display:block; }
     .hidden { display:none !important; }
   }
+
+  /* 網站層級導覽列 */
+  nav.site-nav { display:flex; justify-content:center; gap:10px; margin:18px auto 0; flex-wrap:wrap; }
+  nav.site-nav a { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-width:118px; padding:10px 20px; border-radius:999px;
+    border:1.5px solid var(--primary); background:#fff; color:var(--primary); font-weight:700; font-size:14px; text-decoration:none; letter-spacing:.04em;
+    transition:background .15s, color .15s, box-shadow .15s, transform .15s; font-family:"Noto Sans TC",sans-serif; }
+  nav.site-nav a:hover { background:var(--primary-light); box-shadow:0 4px 12px rgba(31,107,74,.18); transform:translateY(-1px); }
+  nav.site-nav a.current { background:linear-gradient(135deg,var(--primary),var(--primary-dark)); color:#fff; border-color:var(--primary-dark); box-shadow:0 4px 14px rgba(31,107,74,.28); cursor:default; }
+  nav.site-nav a.current:hover { transform:none; }
+  nav.site-nav .ic { font-size:15px; line-height:1; }
+  @media (max-width:600px) {
+    nav.site-nav { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    nav.site-nav a { min-width:0; padding:11px 6px; font-size:13.5px; flex-direction:column; gap:3px; border-radius:14px; }
+  }
+  @media print { nav.site-nav { display:none !important; } }
 </style>
 </head>
 <body>
@@ -116,7 +131,11 @@
     <div class="brand-mark">Alliance Veterinary Hospital</div>
     <h1>聯盟龜山動物醫院・新人工作規範手冊</h1>
     <p id="basis">目前有效的院內規則與流程</p>
-    <div class="nav-links"><a href="index.html">← 助理團隊目標達成回顧</a><a href="meetings.html">會議事項（依時間）→</a></div>
+    <nav class="site-nav" aria-label="網站導覽">
+      <a href="index.html"><span class="ic">📋</span>目標評鑑</a>
+      <a href="meetings.html"><span class="ic">🗓️</span>會議事項</a>
+      <a href="handbook.html" class="current" aria-current="page"><span class="ic">📘</span>新人手冊</a>
+    </nav>
   </header>
 
   <div class="layout">
