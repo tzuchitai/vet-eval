@@ -154,7 +154,7 @@
         <div class="meta"><span>${esc(d.date)}</span><span class="tag">${esc(d.category)}</span>${d.status?`<span class="st ${sc}">${esc(d.status)}</span>`:''}</div>
         <h3>${hl(d.title,q)}</h3>
         <p>${hl(d.summary,q)}</p>
-        <div class="extra">${d.owner?`<span>負責：<b>${hl(d.owner,q)}</b></span>`:''}${d.deadline?`<span>期限：<b>${esc(d.deadline)}</b></span>`:''}<span>來源：${esc(d.source)}</span>${(d.conflictWith||[]).length?`<span>可能衝突：${d.conflictWith.map(c=>`<a href="#${esc(c)}" style="color:var(--primary)">${esc(c)}</a>`).join('、')}</span>`:''}</div>
+        <div class="extra">${d.owner?`<span>負責：<b>${hl(d.owner,q)}</b></span>`:''}${d.deadline?`<span>期限：<b>${esc(d.deadline)}</b></span>`:''}<span>來源：${esc(d.source)}</span>${(d.conflictWith||[]).length?`<span>可能衝突：${d.conflictWith.map(c=>`<a href="#${esc(c)}" style="color:var(--primary)">${esc(c)}</a>`).join('、')}</span>`:''}</div>${d.conflictNote?`<p class="cnote" style="margin:8px 0 0;padding:8px 10px;background:#fffbf1;border:1px solid #e8cf9a;border-radius:8px;font-size:.9em">⚑ ${hl(d.conflictNote,q)}</p>`:''}
       </div>`;
     });
     $('list').innerHTML=html;
