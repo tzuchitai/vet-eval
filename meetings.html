@@ -126,7 +126,7 @@
   let data=[], cat=ALL;
   const $=id=>document.getElementById(id);
   const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const stClass=s=>s==='待辦'?'todo':(s==='已完成'?'done':'decided');
+  const stClass=s=>s==='待辦'?'todo':((s==='已完成'||s==='已取代')?'done':'decided');
   function hl(text,q){
     const t=esc(text); if(!q) return t;
     const qq=esc(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
