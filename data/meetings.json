@@ -1219,5 +1219,16 @@
     "deadline": "",
     "status": "已決議",
     "source": "LINE群組"
+  },
+  {
+    "id": "m20261122-001",
+    "date": "2026-11-22",
+    "category": "藥品與庫存",
+    "title": "藻康留不拆賣",
+    "summary": "藻康留維持原本規定，整盒販售、不拆開零賣；請勿自行拆封。",
+    "owner": "全體",
+    "deadline": "",
+    "status": "已決議",
+    "source": "LINE群組"
   }
 ]
